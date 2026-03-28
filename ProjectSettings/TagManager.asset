@@ -6,6 +6,10 @@ TagManager:
   tags:
   - Anchor
   - Enemy
+  - PlayerBullet
+  - Boss
+  - Crystal
+  - BossBullet
   layers:
   - Default
   - TransparentFX
