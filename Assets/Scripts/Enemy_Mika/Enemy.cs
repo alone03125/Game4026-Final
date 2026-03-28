@@ -73,7 +73,7 @@ public class Enemy : MonoBehaviour
         velocity = Vector3.ClampMagnitude(velocity, maxSpeed);
 
         // 4. 重力影响速度大小
-        float currentGravity = GravityManager.Instance != null ? GravityManager.Instance.currentGravity : 1f;
+        float currentGravity = GameManager.Instance != null ? GameManager.Instance.GetCurrentGravity() : 1f;
         float speedScale = 1 + gravitySensitivity * currentGravity;
         Vector3 finalVelocity = velocity * speedScale;
 
@@ -178,6 +178,8 @@ public class Enemy : MonoBehaviour
 
     public void Die()
     {
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnEnemyKilled();
         if (spawner != null)
             spawner.OnEnemyDied(gameObject);
         else
