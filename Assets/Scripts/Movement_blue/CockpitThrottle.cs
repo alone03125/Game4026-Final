@@ -21,11 +21,34 @@ public class CockpitThrottle : MonoBehaviour
     [SerializeField] float stillDeltaMeters = 0.0015f;       // 每幀位移低於此值視為幾乎不動（公尺）
     [SerializeField] float stillStopTime = 0.06f;            // 持續不動超過此時間就強制停止（秒）
 
+
+    [Header("Gravity Effect")]
+    [SerializeField] bool useGameManagerGravity = true;
+    [SerializeField] float gravityNeutral = 1f;      // 1.0 視為正常重力
+    [SerializeField] float minSpeedMultiplier = 0.4f; // 避免重力太大時幾乎不能動
+    [SerializeField] float maxSpeedMultiplier = 1.8f; // 避免重力太小時過快
+
+
     IXRSelectInteractor _activeInteractor;
     bool _isControlling;
     Vector3 _prevHandPos;
     bool _hasPrevHandPos;
     float _stillTimer;
+
+
+    float GetGravitySpeedMultiplier()
+{
+    if (!useGameManagerGravity) return 1f;
+    if (GameManager.Instance == null) return 1f;
+
+    float g = Mathf.Max(0.01f, GameManager.Instance.GetCurrentGravity());
+
+    // 重力越大 -> 倍率越小；重力越小 -> 倍率越大
+    float raw = gravityNeutral / g;
+
+    return Mathf.Clamp(raw, minSpeedMultiplier, maxSpeedMultiplier);
+}
+
 
     void Reset()
     {
@@ -102,8 +125,8 @@ public class CockpitThrottle : MonoBehaviour
             else if (handSpeedAlongPlayerZ < -handSpeedDeadzone) dir = -1; // 後拉 -> 後退
         }
 
-        // 固定速度，不吃手部移動快慢
-        Vector3 velocity = playerForward * (dir * constantSpeed);
+        float gravityMul = GetGravitySpeedMultiplier();
+        Vector3 velocity = playerForward * (dir * constantSpeed * gravityMul);
         Vector3 step = velocity * dt;
 
         if (characterController != null)
