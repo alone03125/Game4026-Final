@@ -493,7 +493,7 @@ Transform:
   m_GameObject: {fileID: 504126631}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -0.02}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -828,12 +828,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stages:
-  - min: {x: -20, y: -20, z: -20}
-    max: {x: 20, y: 20, z: 20}
-  - min: {x: -30, y: -30, z: -30}
-    max: {x: 30, y: 30, z: 30}
-  - min: {x: -40, y: -40, z: -40}
-    max: {x: 40, y: 40, z: 40}
+  - horizontalRange: 20
+    upperOffset: 10
+    lowerOffset: 5
+  - horizontalRange: 20
+    upperOffset: 10
+    lowerOffset: 5
+  - horizontalRange: 20
+    upperOffset: 10
+    lowerOffset: 5
   enemyPool: {fileID: 829103420}
   spawnInterval: 0
   maxEnemyCount: 15

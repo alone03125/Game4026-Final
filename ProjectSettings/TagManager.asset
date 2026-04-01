@@ -10,6 +10,7 @@ TagManager:
   - Boss
   - Crystal
   - BossBullet
+  - EnemyBullet
   layers:
   - Default
   - TransparentFX

@@ -177,8 +177,9 @@ MonoBehaviour:
   maxSpeed: 50
   acceleration: 8
   steeringForce: 2
+  verticalMovementScale: 5
   minDistanceToPlayer: 5
-  bulletPrefab: {fileID: 7150022249518444547, guid: c7dbca94e48fca749adf6fb4c7ac80f2,
-    type: 3}
+  boundaryRepulsionDistance: 5
+  enemyBulletPrefab: {fileID: 7150022249518444547, guid: c7dbca94e48fca749adf6fb4c7ac80f2, type: 3}
   shootInterval: 1.5
   bulletSpeed: 8

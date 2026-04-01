@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 3408032409822449792}
   m_Layer: 0
   m_Name: BossBullet
-  m_TagString: Untagged
+  m_TagString: BossBullet
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -148,4 +148,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f91f06dddf2ffd34b893a4dd3a13508c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lifetime: 10
+  lifetime: 10000000
+  speed: 15
+  defaultDamage: 3

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -17,8 +18,35 @@ using UnityEngine;
 public class BossController : MonoBehaviour
 {
     // ─────────────────────────────────────────────
+    // 事件
+    // ─────────────────────────────────────────────
+
+    /// <summary>Boss 死亡时触发，供 GameFlowManager 订阅。</summary>
+    public static event Action OnBossDied;
+
+    // ─────────────────────────────────────────────
+    // 受击来源配置（Inspector 中可添加多条）
+    // ─────────────────────────────────────────────
+
+    [System.Serializable]
+    public class DamageSourceConfig
+    {
+        [Tooltip("触发伤害的碰撞体 Tag")]
+        public string tag = "PlayerBullet";
+        [Tooltip("命中后是否销毁该物体")]
+        public bool destroyOnHit = true;
+    }
+
+    // ─────────────────────────────────────────────
     // Inspector 可配置字段
     // ─────────────────────────────────────────────
+
+    [Header("=== 受击来源配置 ===")]
+    [Tooltip("可在此添加所有能对 Boss 造成伤害的来源，每条单独设置 Tag 和是否销毁")]
+    public List<DamageSourceConfig> damageSources = new List<DamageSourceConfig>
+    {
+        new DamageSourceConfig { tag = "PlayerBullet", destroyOnHit = true }
+    };
 
     [Header("=== Boss 基础属性 ===")]
     public float maxHealth = 300f;
@@ -230,14 +258,11 @@ public class BossController : MonoBehaviour
     void SpawnBullet(Vector3 position, Vector3 direction)
     {
         GameObject bullet1Obj = Instantiate(bullet1Prefab, position, Quaternion.LookRotation(direction));
-        bullet1Obj.tag = "BossBullet";   // 标记为 Boss 子弹，防止Boss被自己子弹命中
+        bullet1Obj.tag = "BossBullet";
 
         Bullet1 bullet1 = bullet1Obj.GetComponent<Bullet1>();
         if (bullet1 != null)
-        {
-            float dmg = isBerserk ? phase3Bullet1Damage : phase1Bullet1Damage;
-            bullet1.Initialize(direction, bullet1Speed, dmg);
-        }
+            bullet1.SetDirection(direction);
     }
 
     // ─────────────────────────────────────────────
@@ -473,6 +498,7 @@ public class BossController : MonoBehaviour
         if (bossGlowLight          != null) bossGlowLight.enabled = false;
 
         // TODO：播放死亡动画、掉落奖励、触发过场动画等
+        OnBossDied?.Invoke();
         gameObject.SetActive(false);
     }
 
@@ -482,15 +508,23 @@ public class BossController : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("PlayerAttack") || other.CompareTag("PlayerBullet"))
+        foreach (DamageSourceConfig source in damageSources)
         {
-            DamageSource ds = other.GetComponent<DamageSource>();
-            float dmg = (ds != null) ? ds.damage : 1f;
-            TakeDamage(dmg);
+            bool matched = false;
+            try { matched = other.CompareTag(source.tag); }
+            catch { Debug.LogWarning($"[Boss] Tag '{source.tag}' 未定义，跳过。"); continue; }
 
-            // 如果是子弹则销毁
-            if (other.CompareTag("PlayerBullet"))
-                Destroy(other.gameObject);
+            if (matched)
+            {
+                DamageSource ds = other.GetComponent<DamageSource>();
+                float dmg = (ds != null) ? ds.damage : 1f;
+                TakeDamage(dmg);
+
+                if (source.destroyOnHit)
+                    Destroy(other.gameObject);
+
+                break;
+            }
         }
     }
 

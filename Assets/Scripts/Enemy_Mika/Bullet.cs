@@ -5,7 +5,7 @@ public class Bullet : MonoBehaviour
     public enum BulletType { Player, Enemy }  // 区分子弹来源
     public BulletType type;
     public float speed = 10f;
-    public int damage = 10;
+    public float defaultDamage = 1f;
     public float lifeTime = 3f;
 
     void Start()
@@ -35,7 +35,7 @@ public class Bullet : MonoBehaviour
         {
             PlayerHealth playerHealth = other.GetComponent<PlayerHealth>();
             if (playerHealth != null)
-                playerHealth.TakeDamage(damage);
+                playerHealth.TakeDamage(defaultDamage);
             Destroy(gameObject);
         }
         // 碰到其他物体（如墙壁）也可销毁

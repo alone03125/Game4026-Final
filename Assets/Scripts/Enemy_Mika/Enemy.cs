@@ -12,12 +12,14 @@ public class Enemy : MonoBehaviour
     public float maxSpeed = 5f;                // 最大速度
     public float acceleration = 8f;            // 加速度（转向速度）
     public float steeringForce = 2f;           // 转向力强度（平滑转向）
+    public float verticalMovementScale = 2f;   // 随机方向中Y轴的放大系数（>1使敌人更常飞起来）
 
     [Header("行为限制")]
     public float minDistanceToPlayer = 10f;     // 距离玩家小于此值时强制远离
+    public float boundaryRepulsionDistance = 5f; // 距边界多近时开始被推离（平滑离开）
 
     [Header("射击参数")]
-    public GameObject bulletPrefab;
+    public GameObject enemyBulletPrefab;
     public float shootInterval = 1.5f;
     public float bulletSpeed = 8f;
 
@@ -93,19 +95,26 @@ public class Enemy : MonoBehaviour
 
         // 检查与玩家的距离
         float distance = Vector3.Distance(transform.position, player.position);
+        Vector3 baseDir;
         if (distance < minDistanceToPlayer)
         {
             // 距离太近：强制远离玩家，并加入随机扰动
             Vector3 awayDir = (transform.position - player.position).normalized;
             Vector3 randomOffset = new Vector3(Random.Range(-0.5f, 0.5f), Random.Range(-0.5f, 0.5f), Random.Range(-0.5f, 0.5f)).normalized;
-            Vector3 desired = (awayDir + randomOffset * 0.3f).normalized;
-            return desired;
+            baseDir = (awayDir + randomOffset * 0.3f).normalized;
         }
         else
         {
             // 正常情况：使用混合方向（追踪+随机）
-            return currentDesiredDir;
+            baseDir = currentDesiredDir;
         }
+
+        // 边界排斥：靠近边界时平滑地混入一个朝向中心的推力
+        Vector3 repulsion = GetBoundaryRepulsion();
+        if (repulsion != Vector3.zero)
+            baseDir = (baseDir + repulsion).normalized;
+
+        return baseDir;
     }
 
     void UpdateDesiredDirection()
@@ -116,8 +125,9 @@ public class Enemy : MonoBehaviour
         Vector3 toPlayer = (player.position - transform.position).normalized;
         // 随机方向（全3D）
         Vector3 randomDir = Random.onUnitSphere;
-        // 混合：朝向玩家 + 随机方向，并让 Y 方向略小（避免飞太高，但可以上下）
-        randomDir.y *= 0.5f; // 让上下移动不那么剧烈，可调整
+        // 放大Y分量使敌人更频繁地上下飞行，verticalMovementScale > 1 越大越活跃
+        randomDir.y *= verticalMovementScale;
+        // randomDir.y += 0.6f; // 稍微增加一点向上的倾向，避免完全水平飞行
         randomDir.Normalize();
 
         Vector3 mixed = (toPlayer * (1 - randomMoveWeight) + randomDir * randomMoveWeight).normalized;
@@ -130,16 +140,14 @@ public class Enemy : MonoBehaviour
         if (shootTimer >= shootInterval)
         {
             shootTimer = 0;
-            if (bulletPrefab != null && player != null)
+            if (enemyBulletPrefab != null && player != null)
             {
                 Vector3 direction = (player.position - transform.position).normalized;
-                GameObject bullet = Instantiate(bulletPrefab, transform.position, Quaternion.LookRotation(direction));
-                Bullet bulletScript = bullet.GetComponent<Bullet>();
+                GameObject bullet = Instantiate(enemyBulletPrefab, transform.position, Quaternion.LookRotation(direction));
+                bullet.tag = "EnemyBullet";
+                EnemyBullet bulletScript = bullet.GetComponent<EnemyBullet>();
                 if (bulletScript != null)
-                {
-                    bulletScript.type = Bullet.BulletType.Enemy;
                     bulletScript.speed = bulletSpeed;
-                }
             }
         }
     }
@@ -155,6 +163,32 @@ public class Enemy : MonoBehaviour
             pos.z = Mathf.Clamp(pos.z, bounds.min.z, bounds.max.z);
             transform.position = pos;
         }
+    }
+
+    // 根据与边界的距离计算排斥力方向（越近排斥越强，在 boundaryRepulsionDistance 外为零）
+    Vector3 GetBoundaryRepulsion()
+    {
+        if (spawner == null) return Vector3.zero;
+        Bounds bounds = spawner.GetCurrentBounds();
+        Vector3 pos = transform.position;
+        Vector3 repulsion = Vector3.zero;
+        float d = boundaryRepulsionDistance;
+
+        float dxMin = pos.x - bounds.min.x;
+        float dxMax = bounds.max.x - pos.x;
+        float dyMin = pos.y - bounds.min.y;
+        float dyMax = bounds.max.y - pos.y;
+        float dzMin = pos.z - bounds.min.z;
+        float dzMax = bounds.max.z - pos.z;
+
+        if (dxMin < d) repulsion.x += (1f - dxMin / d);
+        if (dxMax < d) repulsion.x -= (1f - dxMax / d);
+        if (dyMin < d) repulsion.y += (1f - dyMin / d);
+        if (dyMax < d) repulsion.y -= (1f - dyMax / d);
+        if (dzMin < d) repulsion.z += (1f - dzMin / d);
+        if (dzMax < d) repulsion.z -= (1f - dzMax / d);
+
+        return repulsion.normalized * repulsion.magnitude;
     }
 
     void FacePlayer()

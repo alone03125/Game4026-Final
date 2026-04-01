@@ -4,10 +4,11 @@ using UnityEngine;
 public class EnemySpawner : MonoBehaviour
 {
     [System.Serializable]
-    public class StageBounds
+    public class StageSpawnRange
     {
-        public Vector3 min;
-        public Vector3 max;
+        public float horizontalRange = 20f;  // 玩家周围水平方向（XZ）的生成半径
+        public float upperOffset = 10f;      // 玩家上方的生成范围
+        public float lowerOffset = 5f;       // 玩家下方的生成范围
     }
 
     [System.Serializable]
@@ -17,8 +18,8 @@ public class EnemySpawner : MonoBehaviour
         public int removeCount; // 触发时删除的数量
     }
 
-    [Header("阶段边界")]
-    public StageBounds[] stages;            // 每个阶段的生成边界
+    [Header("阶段生成范围（相对玩家）")]
+    public StageSpawnRange[] stages;        // 每个阶段相对玩家的生成范围
 
     [Header("对象池")]
     public ObjectPool enemyPool;            // 对象池引用
@@ -43,22 +44,47 @@ public class EnemySpawner : MonoBehaviour
     private int currentStage = 0;
     private List<Enemy> activeEnemies = new List<Enemy>();
     private float spawnTimer;
+    private Transform player;
+
+    // 由 GameFlowManager 控制，默认关闭，防止游戏启动时自动生成
+    private bool isSpawningEnabled = false;
 
     void Start()
     {
         if (stages.Length == 0)
-            Debug.LogError("没有设置阶段边界！");
+            Debug.LogError("没有设置阶段生成范围！");
+
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+            player = playerObj.transform;
+        else
+            Debug.LogError("没有找到Player标签的物体！");
 
         if (mainCamera == null)
             mainCamera = Camera.main;
         if (mainCamera == null)
             Debug.LogError("找不到主摄像机，请手动为 EnemySpawner 指定 mainCamera！");
 
-        spawnTimer = 0f; // 让第一个敌人生成稍快
+        spawnTimer = 0f;
+    }
+
+    /// <summary>开启自动持续生成（由 GameFlowManager 在战斗阶段开始时调用）</summary>
+    public void EnableSpawning()
+    {
+        isSpawningEnabled = true;
+        spawnTimer = 0f; // 开启后立即可以生成
+    }
+
+    /// <summary>关闭自动持续生成（由 GameFlowManager 在阶段结束时调用）</summary>
+    public void DisableSpawning()
+    {
+        isSpawningEnabled = false;
     }
 
     void Update()
     {
+        if (!isSpawningEnabled) return;
+
         if (useDynamicSpawnRate)
         {
             // 根据当前敌人数量动态计算间隔
@@ -189,9 +215,14 @@ public class EnemySpawner : MonoBehaviour
     {
         if (currentStage < 0 || currentStage >= stages.Length)
             return new Bounds(Vector3.zero, Vector3.zero);
-        StageBounds sb = stages[currentStage];
-        Vector3 center = (sb.min + sb.max) / 2;
-        Vector3 size = sb.max - sb.min;
+
+        StageSpawnRange range = stages[currentStage];
+        Vector3 playerPos = player != null ? player.position : Vector3.zero;
+
+        // 以玩家为中心，上下分别偏移，水平方向为半径
+        float centerY = playerPos.y + (range.upperOffset - range.lowerOffset) / 2f;
+        Vector3 center = new Vector3(playerPos.x, centerY, playerPos.z);
+        Vector3 size = new Vector3(range.horizontalRange * 2f, range.upperOffset + range.lowerOffset, range.horizontalRange * 2f);
         return new Bounds(center, size);
     }
 
