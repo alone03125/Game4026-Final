@@ -5,29 +5,31 @@ using UnityEngine.XR.Interaction.Toolkit;
 public class CockpitThrottle : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] XRSimpleInteractable leverInteractable; // Cube 上的 Simple Interactable
-    [SerializeField] Transform xrOrigin;                     // 玩家 XR Origin
-    [SerializeField] Transform xrCamera;                     // HMD Camera
-    [SerializeField] Transform mechaRoot;                    // 要移動的角色/機甲
-    [SerializeField] CharacterController characterController; // 有就用，沒有可留空
+    [SerializeField] XRSimpleInteractable leverInteractable;
+    [SerializeField] Transform xrOrigin;
+    [SerializeField] Transform xrCamera;
+    [SerializeField] Transform mechaRoot;
+    [SerializeField] CharacterController characterController;
 
     [Header("Movement")]
-    [SerializeField] float constantSpeed = 2.0f;             // 固定速度 (m/s)
-    [SerializeField] float handSpeedDeadzone = 0.05f;        // 手部速度死區 (m/s)
-    [SerializeField] bool useHeadForward = true;             // true: 用頭朝向當前後軸
-    [SerializeField] bool flattenToHorizontal = true;        // 只在水平面前後
+    [SerializeField] float constantSpeed = 2.0f;
+    [SerializeField] float handSpeedDeadzone = 0.05f;
+    [SerializeField] bool useHeadForward = true;
+    [SerializeField] bool flattenToHorizontal = true;
 
     [Header("Hold Still Stop")]
-    [SerializeField] float stillDeltaMeters = 0.0015f;       // 每幀位移低於此值視為幾乎不動（公尺）
-    [SerializeField] float stillStopTime = 0.06f;            // 持續不動超過此時間就強制停止（秒）
+    [SerializeField] float stillDeltaMeters = 0.0015f;
+    [SerializeField] float stillStopTime = 0.06f;
 
+    [Header("Interaction")]
+    [Tooltip("若為 true，只有 XRDirectInteractor（近距離碰觸）能啟動，會忽略射線選取")]
+    [SerializeField] bool requireDirectInteractorOnly = true;
 
     [Header("Gravity Effect")]
     [SerializeField] bool useGameManagerGravity = true;
-    [SerializeField] float gravityNeutral = 1f;      // 1.0 視為正常重力
-    [SerializeField] float minSpeedMultiplier = 0.4f; // 避免重力太大時幾乎不能動
-    [SerializeField] float maxSpeedMultiplier = 1.8f; // 避免重力太小時過快
-
+    [SerializeField] float gravityNeutral = 1f;
+    [SerializeField] float minSpeedMultiplier = 0.4f;
+    [SerializeField] float maxSpeedMultiplier = 1.8f;
 
     IXRSelectInteractor _activeInteractor;
     bool _isControlling;
@@ -35,20 +37,14 @@ public class CockpitThrottle : MonoBehaviour
     bool _hasPrevHandPos;
     float _stillTimer;
 
-
     float GetGravitySpeedMultiplier()
-{
-    if (!useGameManagerGravity) return 1f;
-    if (GameManager.Instance == null) return 1f;
-
-    float g = Mathf.Max(0.01f, GameManager.Instance.GetCurrentGravity());
-
-    // 重力越大 -> 倍率越小；重力越小 -> 倍率越大
-    float raw = gravityNeutral / g;
-
-    return Mathf.Clamp(raw, minSpeedMultiplier, maxSpeedMultiplier);
-}
-
+    {
+        if (!useGameManagerGravity) return 1f;
+        if (GameManager.Instance == null) return 1f;
+        float g = Mathf.Max(0.01f, GameManager.Instance.GetCurrentGravity());
+        float raw = gravityNeutral / g;
+        return Mathf.Clamp(raw, minSpeedMultiplier, maxSpeedMultiplier);
+    }
 
     void Reset()
     {
@@ -71,6 +67,9 @@ public class CockpitThrottle : MonoBehaviour
 
     void OnSelectEntered(SelectEnterEventArgs args)
     {
+        if (requireDirectInteractorOnly && args.interactorObject is not XRDirectInteractor)
+            return;
+
         _activeInteractor = args.interactorObject;
         _isControlling = true;
         _prevHandPos = GetInteractorWorldPos(_activeInteractor);
@@ -91,8 +90,14 @@ public class CockpitThrottle : MonoBehaviour
         if (!_isControlling || _activeInteractor == null) return;
         if (mechaRoot == null) return;
 
-        Vector3 playerForward = GetPlayerForwardAxis();
-        if (playerForward.sqrMagnitude < 0.0001f) return;
+        Vector3 forward = GetPlayerForwardAxis();
+        if (forward.sqrMagnitude < 0.0001f) return;
+
+        Vector3 right = Vector3.Cross(Vector3.up, forward);
+        if (right.sqrMagnitude < 0.0001f)
+            right = Vector3.right;
+        else
+            right.Normalize();
 
         Vector3 handNow = GetInteractorWorldPos(_activeInteractor);
 
@@ -106,27 +111,37 @@ public class CockpitThrottle : MonoBehaviour
         Vector3 handDelta = handNow - _prevHandPos;
         _prevHandPos = handNow;
 
+        if (flattenToHorizontal)
+            handDelta.y = 0f;
+
         float dt = Mathf.Max(Time.deltaTime, 0.0001f);
 
-        // 手部靜止判定：按著不動就停
         if (handDelta.sqrMagnitude <= stillDeltaMeters * stillDeltaMeters)
             _stillTimer += dt;
         else
             _stillTimer = 0f;
 
-        int dir = 0;
+        Vector3 moveDir = Vector3.zero;
 
         if (_stillTimer < stillStopTime)
         {
-            // 看「手當前是在往前推還是往後拉」
-            float handSpeedAlongPlayerZ = Vector3.Dot(handDelta, playerForward) / dt;
+            float alongF = Vector3.Dot(handDelta, forward) / dt;
+            float alongR = Vector3.Dot(handDelta, right) / dt;
 
-            if (handSpeedAlongPlayerZ > handSpeedDeadzone) dir = 1;        // 前推 -> 前進
-            else if (handSpeedAlongPlayerZ < -handSpeedDeadzone) dir = -1; // 後拉 -> 後退
+            float fx = 0f, rx = 0f;
+            if (alongF > handSpeedDeadzone) fx = 1f;
+            else if (alongF < -handSpeedDeadzone) fx = -1f;
+
+            if (alongR > handSpeedDeadzone) rx = 1f;
+            else if (alongR < -handSpeedDeadzone) rx = -1f;
+
+            moveDir = forward * fx + right * rx;
+            if (moveDir.sqrMagnitude > 0.0001f)
+                moveDir.Normalize();
         }
 
-        float gravityMul = GetGravitySpeedMultiplier();
-        Vector3 velocity = playerForward * (dir * constantSpeed * gravityMul);
+        float gMul = GetGravitySpeedMultiplier();
+        Vector3 velocity = moveDir * (constantSpeed * gMul);
         Vector3 step = velocity * dt;
 
         if (characterController != null)
