@@ -1460,6 +1460,7 @@ GameObject:
   m_Component:
   - component: {fileID: 467178437}
   - component: {fileID: 467178436}
+  - component: {fileID: 467178438}
   m_Layer: 0
   m_Name: EnemySpawner
   m_TagString: Untagged
@@ -1520,6 +1521,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &467178438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 467178435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 000be7afdad5f8c43898e712477f69bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  killKey: 107
 --- !u!1001 &470742227
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1692,7 +1706,7 @@ GameObject:
   - component: {fileID: 579813231}
   m_Layer: 0
   m_Name: A
-  m_TagString: Untagged
+  m_TagString: VRController
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1751,6 +1765,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  controllerTag: VRController
+  pressCooldown: 1
 --- !u!65 &579813232
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1839,7 +1855,7 @@ GameObject:
   - component: {fileID: 625783116}
   m_Layer: 0
   m_Name: D
-  m_TagString: Untagged
+  m_TagString: VRController
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1898,6 +1914,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  controllerTag: VRController
+  pressCooldown: 1
 --- !u!65 &625783117
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3209,7 +3227,7 @@ GameObject:
   - component: {fileID: 1160507345}
   m_Layer: 0
   m_Name: B
-  m_TagString: Untagged
+  m_TagString: VRController
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3268,6 +3286,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  controllerTag: VRController
+  pressCooldown: 1
 --- !u!65 &1160507346
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5203,7 +5223,7 @@ GameObject:
   - component: {fileID: 1717799986}
   m_Layer: 0
   m_Name: C
-  m_TagString: Untagged
+  m_TagString: VRController
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5262,6 +5282,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  controllerTag: VRController
+  pressCooldown: 1
 --- !u!65 &1717799987
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6633,6 +6655,14 @@ PrefabInstance:
     - target: {fileID: 7635752468820960713, guid: ba5a8af8cdeb84c4785af62f43c30ec9, type: 3}
       propertyPath: m_TagString
       value: Untagged
+      objectReference: {fileID: 0}
+    - target: {fileID: 8183094665490940716, guid: ba5a8af8cdeb84c4785af62f43c30ec9, type: 3}
+      propertyPath: m_TagString
+      value: VRController
+      objectReference: {fileID: 0}
+    - target: {fileID: 8183094666975675347, guid: ba5a8af8cdeb84c4785af62f43c30ec9, type: 3}
+      propertyPath: m_TagString
+      value: VRController
       objectReference: {fileID: 0}
     - target: {fileID: 8767539240582008234, guid: ba5a8af8cdeb84c4785af62f43c30ec9, type: 3}
       propertyPath: m_LocalPosition.x

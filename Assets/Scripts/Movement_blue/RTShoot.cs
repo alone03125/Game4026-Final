@@ -12,14 +12,15 @@ public class RTShoot : MonoBehaviour
     [SerializeField] private float bulletSpeed = 25f;
 
     [Header("Heat Settings")]
-    [SerializeField] private float overheatHoldSeconds = 5f;
-    [SerializeField] private float cooldownSeconds = 2f;     
+    [SerializeField] private float heatPerBullet = 3f;          // 每发子弹增加的热量
+    [SerializeField] private float overheatThreshold = 300f;    // 过热阈值
+    [SerializeField] private float normalCoolRate = 100f;       // 正常冷却速率（每秒）
+    [SerializeField] private float overheatCoolRate = 60f;      // 过热状态冷却速率（每秒）
 
     private InputDevice rightHandDevice;
     private bool isTrigger;
     private float shootTimer;
-    private float holdTime;
-    private float cooldownTimer;
+    private float barrelHeat;     // 当前枪管热量值
     private bool isOverheated;
 
     void Start()
@@ -37,63 +38,50 @@ public class RTShoot : MonoBehaviour
     bool triggerPressed = false;
     rightHandDevice.TryGetFeatureValue(CommonUsages.triggerButton, out triggerPressed);
 
-    // 過熱冷卻中
+    // 冷却（无论是否过热，只要没在射击就降温）
+    if (!triggerPressed)
+    {
+        float coolRate = isOverheated ? overheatCoolRate : normalCoolRate;
+        barrelHeat -= coolRate * Time.deltaTime;
+        if (barrelHeat < 0f) barrelHeat = 0f;
+
+        // 过热状态：热量归零才解除
+        if (isOverheated && barrelHeat <= 0f)
+        {
+            isOverheated = false;
+            Debug.Log("Weapon cooled down");
+        }
+    }
+
+    // 过热中，禁止射击
     if (isOverheated)
     {
-        if (!triggerPressed)
-        {
-            cooldownTimer += Time.deltaTime;
-            if (cooldownTimer >= cooldownSeconds)
-            {
-                isOverheated = false;
-                cooldownTimer = 0f;
-                holdTime = 0f;
-                Debug.Log("Weapon cooled down");
-            }
-        }
-        else
-        {
-            // 持續按著就不讓它冷卻
-            cooldownTimer = 0f;
-        }
         isTrigger = triggerPressed;
         return;
     }
 
-    // 按下當下先發一顆
+    // 按下瞬间立即射击一发
     if (triggerPressed && !isTrigger)
     {
         FireOnce();
         shootTimer = 0f;
     }
 
-    // 長按連發 + 過熱計時
+    // 长按连发
     if (triggerPressed)
     {
-        holdTime += Time.deltaTime;
-        
-        Debug.Log($"Has been shooting for {shootTimer:F2} seconds");
-
         shootTimer += Time.deltaTime;
-
         if (shootTimer >= fireInterval)
         {
             FireOnce();
             shootTimer = 0f;
         }
-        if (holdTime >= overheatHoldSeconds)
-        {
-            isOverheated = true;
-            shootTimer = 0f;
-            cooldownTimer = 0f;
-            Debug.Log("Overheated!");
-        }
     }
     else
     {
         shootTimer = 0f;
-        holdTime = 0f;
     }
+
     isTrigger = triggerPressed;
 }
 
@@ -112,8 +100,28 @@ public class RTShoot : MonoBehaviour
         {
             rb.isKinematic = false;
             rb.useGravity = true;
-            rb.velocity = bulletOrigin.forward * bulletSpeed; // 初速
+            rb.velocity = bulletOrigin.forward * bulletSpeed;
         }
+
+        // 每发子弹增加热量
+        barrelHeat += heatPerBullet;
+        if (barrelHeat >= overheatThreshold)
+        {
+            barrelHeat = overheatThreshold;
+            isOverheated = true;
+            Debug.Log("Overheated!");
+        }
+    }
+
+    /// <summary>
+    /// Resets barrel heat to 0 and clears overheat state.
+    /// Called by the ABBC weapon-repair button sequence.
+    /// </summary>
+    public void ResetHeat()
+    {
+        barrelHeat = 0f;
+        isOverheated = false;
+        Debug.Log("[RTShoot] Heat reset by repair sequence.");
     }
 
     private void TryGetRightHandDevice()

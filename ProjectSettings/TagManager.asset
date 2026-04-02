@@ -11,6 +11,7 @@ TagManager:
   - Crystal
   - BossBullet
   - EnemyBullet
+  - VRController
   layers:
   - Default
   - TransparentFX

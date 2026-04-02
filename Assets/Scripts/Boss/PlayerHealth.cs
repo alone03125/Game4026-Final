@@ -12,6 +12,10 @@ public class PlayerHealth : MonoBehaviour
     public float maxHealth = 100f;
     [SerializeField] private float currentHealth;
 
+    [Header("=== 次数护盾 ===")]
+    [SerializeField] private int shieldCount = 0;
+    private const int MAX_SHIELD_COUNT = 32;
+
     [Header("=== UI（可选）===")]
     [Tooltip("显示血量的 Slider，留空则忽略")]
     public Slider healthSlider;
@@ -60,6 +64,15 @@ public class PlayerHealth : MonoBehaviour
     {
         if (isDead) return;
 
+        // 次数护盾：有护盾则抵扣，不扣血量
+        if (shieldCount > 0)
+        {
+            shieldCount--;
+            Debug.Log($"[Player] 护盾抵挡伤害！剩余护盾次数：{shieldCount}");
+            UpdateUI();
+            return;
+        }
+
         currentHealth -= damage;
         currentHealth  = Mathf.Clamp(currentHealth, 0f, maxHealth);
 
@@ -67,6 +80,43 @@ public class PlayerHealth : MonoBehaviour
         UpdateUI();
 
         if (currentHealth <= 0f) Die();
+    }
+
+    /// <summary>为护盾添加次数，上限 32。由 DBAC 序列调用。</summary>
+    public void AddShield(int count)
+    {
+        shieldCount = Mathf.Min(shieldCount + count, MAX_SHIELD_COUNT);
+        Debug.Log($"[Player] 护盾充能，当前护盾次数：{shieldCount}");
+    }
+
+    /// <summary>恢复最大生命值的指定百分比。由 BCADBACD 序列调用。</summary>
+    public void HealPercent(float percent)
+    {
+        Heal(maxHealth * percent);
+        Debug.Log($"[Player] 机甲修复，恢复 {percent * 100f:F0}% 生命值");
+    }
+
+    /// <summary>
+    /// 以指定比例的最大生命值复活玩家。仅在死亡状态下有效。
+    /// 由 ABBBBCD 复活序列调用。
+    /// </summary>
+    public void RevivePartial(float healthFraction)
+    {
+        if (!isDead) return;
+
+        currentHealth = Mathf.Clamp(maxHealth * healthFraction, 1f, maxHealth);
+        isDead = false;
+
+        UpdateUI();
+        if (deathPanel != null) deathPanel.SetActive(false);
+
+        foreach (var comp in disableOnDeath)
+            if (comp != null) comp.enabled = true;
+
+        if (_poseRoutine != null) StopCoroutine(_poseRoutine);
+        _poseRoutine = StartCoroutine(RotateToRoutine(_aliveRotation));
+
+        Debug.Log($"[Player] 玩家以 {healthFraction * 100f:F0}% 生命值复活！");
     }
 
     /// <summary>回血（可供治疗道具调用）</summary>
