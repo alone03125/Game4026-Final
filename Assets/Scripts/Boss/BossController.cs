@@ -485,6 +485,12 @@ public class BossController : MonoBehaviour
     // 死亡
     // ─────────────────────────────────────────────
 
+    void OnDisable()
+    {
+        // 禁用时停止所有协程，防止域重载时加载对象导致未定义行为
+        StopAllCoroutines();
+    }
+
     void Die()
     {
         Debug.Log("[Boss] Boss 被击败！");
