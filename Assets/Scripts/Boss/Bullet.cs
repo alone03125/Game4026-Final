@@ -25,6 +25,7 @@ public class Bullet1 : MonoBehaviour
     public float defaultDamage = 1f;
 
     private Vector3 moveDirection;
+    private bool _hasHit = false;
 
     void Awake()
     {
@@ -49,6 +50,8 @@ public class Bullet1 : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        if (_hasHit) return;
+
         if (other.CompareTag("Boss")
          || other.CompareTag("BossBullet")
          || other.CompareTag("Crystal"))
@@ -56,13 +59,37 @@ public class Bullet1 : MonoBehaviour
 
         if (other.gameObject.layer == LayerMask.NameToLayer("Player"))
         {
-            PlayerHealth ph = other.GetComponent<PlayerHealth>();
+            PlayerHealth ph = ResolvePlayerHealth(other);
             if (ph != null)
+            {
+                _hasHit = true;
                 ph.TakeDamage(defaultDamage);
+            }
             else
                 Debug.LogWarning("[Bullet1] 玩家对象上未找到 PlayerHealth 组件！");
         }
 
+        _hasHit = true;
         Destroy(gameObject);
+    }
+
+    private PlayerHealth ResolvePlayerHealth(Collider other)
+    {
+        PlayerHealth ph = other.GetComponent<PlayerHealth>();
+        if (ph != null) return ph;
+
+        ph = other.GetComponentInParent<PlayerHealth>();
+        if (ph != null) return ph;
+
+        if (other.attachedRigidbody != null)
+        {
+            ph = other.attachedRigidbody.GetComponent<PlayerHealth>();
+            if (ph != null) return ph;
+
+            ph = other.attachedRigidbody.GetComponentInParent<PlayerHealth>();
+            if (ph != null) return ph;
+        }
+
+        return null;
     }
 }

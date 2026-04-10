@@ -202,7 +202,7 @@ public class Enemy : MonoBehaviour
             // 距离太近：强制远离玩家，并加入随机扰动
             Vector3 awayDir = (transform.position - player.position).normalized;
             Vector3 randomOffset = new Vector3(Random.Range(-0.5f, 0.5f), Random.Range(-0.5f, 0.5f), Random.Range(-0.5f, 0.5f)).normalized;
-            baseDir = (awayDir + randomOffset * 0.3f).normalized;
+            baseDir = (awayDir * 1.5f + randomOffset * 0.3f).normalized;
         }
         else
         {
@@ -348,9 +348,35 @@ public class Enemy : MonoBehaviour
         {
             Bounds bounds = spawner.GetCurrentBounds();
             Vector3 pos = transform.position;
-            pos.x = Mathf.Clamp(pos.x, bounds.min.x, bounds.max.x);
-            pos.y = Mathf.Clamp(pos.y, bounds.min.y, bounds.max.y);
-            pos.z = Mathf.Clamp(pos.z, bounds.min.z, bounds.max.z);
+
+            // 给边界留一点安全内缩，避免敌人贴边抖动
+            const float edgePadding = 0.1f;
+            float minX = bounds.min.x + edgePadding;
+            float maxX = bounds.max.x - edgePadding;
+            float minY = bounds.min.y + edgePadding;
+            float maxY = bounds.max.y - edgePadding;
+            float minZ = bounds.min.z + edgePadding;
+            float maxZ = bounds.max.z - edgePadding;
+
+            bool hitMinX = pos.x <= minX;
+            bool hitMaxX = pos.x >= maxX;
+            bool hitMinY = pos.y <= minY;
+            bool hitMaxY = pos.y >= maxY;
+            bool hitMinZ = pos.z <= minZ;
+            bool hitMaxZ = pos.z >= maxZ;
+
+            pos.x = Mathf.Clamp(pos.x, minX, maxX);
+            pos.y = Mathf.Clamp(pos.y, minY, maxY);
+            pos.z = Mathf.Clamp(pos.z, minZ, maxZ);
+
+            // 命中边界时，清除继续向外的速度分量，防止下一帧继续挤压边界
+            if (hitMinX && velocity.x < 0f) velocity.x = 0f;
+            if (hitMaxX && velocity.x > 0f) velocity.x = 0f;
+            if (hitMinY && velocity.y < 0f) velocity.y = 0f;
+            if (hitMaxY && velocity.y > 0f) velocity.y = 0f;
+            if (hitMinZ && velocity.z < 0f) velocity.z = 0f;
+            if (hitMaxZ && velocity.z > 0f) velocity.z = 0f;
+
             transform.position = pos;
         }
     }
@@ -364,6 +390,8 @@ public class Enemy : MonoBehaviour
         Vector3 repulsion = Vector3.zero;
         float d = boundaryRepulsionDistance;
 
+        if (d <= 0f) return Vector3.zero;
+
         float dxMin = pos.x - bounds.min.x;
         float dxMax = bounds.max.x - pos.x;
         float dyMin = pos.y - bounds.min.y;
@@ -371,14 +399,15 @@ public class Enemy : MonoBehaviour
         float dzMin = pos.z - bounds.min.z;
         float dzMax = bounds.max.z - pos.z;
 
-        if (dxMin < d) repulsion.x += (1f - dxMin / d);
-        if (dxMax < d) repulsion.x -= (1f - dxMax / d);
-        if (dyMin < d) repulsion.y += (1f - dyMin / d);
-        if (dyMax < d) repulsion.y -= (1f - dyMax / d);
-        if (dzMin < d) repulsion.z += (1f - dzMin / d);
-        if (dzMax < d) repulsion.z -= (1f - dzMax / d);
+        // 越靠近边界，推力按二次曲线增强，避免“临边时推不回来”
+        if (dxMin < d) repulsion.x += Mathf.Pow(1f - dxMin / d, 2f);
+        if (dxMax < d) repulsion.x -= Mathf.Pow(1f - dxMax / d, 2f);
+        if (dyMin < d) repulsion.y += Mathf.Pow(1f - dyMin / d, 2f);
+        if (dyMax < d) repulsion.y -= Mathf.Pow(1f - dyMax / d, 2f);
+        if (dzMin < d) repulsion.z += Mathf.Pow(1f - dzMin / d, 2f);
+        if (dzMax < d) repulsion.z -= Mathf.Pow(1f - dzMax / d, 2f);
 
-        return repulsion.normalized * repulsion.magnitude;
+        return repulsion;
     }
 
     void FacePlayer()

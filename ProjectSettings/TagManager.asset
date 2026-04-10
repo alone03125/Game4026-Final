@@ -12,6 +12,7 @@ TagManager:
   - BossBullet
   - EnemyBullet
   - VRController
+  - PlayerBody
   layers:
   - Default
   - TransparentFX

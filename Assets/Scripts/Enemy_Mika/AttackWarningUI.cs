@@ -31,6 +31,11 @@ public class AttackWarningUI : MonoBehaviour
     [Tooltip("箭头的 UI 尺寸（画布单位）")]
     public float arrowSize = 0.08f;
 
+    [Header("视野判断")]
+    [Tooltip("这个角度内的敌人被认为在视野内，不显示箭头。建议设为相机 FOV 的一半左右，例如 FOV=90 则设 45）")]
+    [Range(10f, 90f)]
+    public float fovHalfAngle = 45f;
+
     [Header("视觉样式")]
     public Color arrowColor        = new Color(1f, 0.25f, 0.25f, 0.9f);
     public Color arrowChargingColor = new Color(1f, 1f, 0f, 1f);  // 蓄力时的闪烁颜色（默认黄色）
@@ -128,6 +133,18 @@ public class AttackWarningUI : MonoBehaviour
             // 箭头朝上 = 敌人在前方，朝下 = 背后，朝左右 = 两侧
             Vector2 offset = new Vector2(localDir.x, localDir.z);
             if (offset.sqrMagnitude < 1e-6f) offset = Vector2.up;
+
+            // ── 如果敌人在视野内则跳过，不显示箭头 ──
+            // localDir.z > 0 表示敌人在前方；同时水平角度和垂直角度均在阈値内才认为在视野内
+            if (localDir.z > 0f)
+            {
+                float cosThreshold = Mathf.Cos(fovHalfAngle * Mathf.Deg2Rad);
+                // 分别检查水平方向（X/Z平面）和垂直方向（Y/Z平面）是否均在阈値内
+                float hAngleCos = localDir.z / Mathf.Sqrt(localDir.z * localDir.z + localDir.x * localDir.x + 1e-8f);
+                float vAngleCos = localDir.z / Mathf.Sqrt(localDir.z * localDir.z + localDir.y * localDir.y + 1e-8f);
+                if (hAngleCos >= cosThreshold && vAngleCos >= cosThreshold)
+                    continue;  // 在视野内，跳过不显示箭头
+            }
 
             // ── 夹到画布边缘 ──
             Vector2 edgePos = ClampToEdge(offset.normalized, halfW, halfH);

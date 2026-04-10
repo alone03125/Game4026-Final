@@ -1,27 +1,25 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
 
-// ==================== 3D��ť����ģ�� ====================
-/// <summary>
-/// ������ÿ��3D�ⷽ�鰴ť�ϣ������Ӿ����������¶�������֪ͨ���й�����
-/// ��ť��ɫͨ���������֣�������̣����ű���������ɫ��ֻ����Inspector��ָ����ʶ
-/// </summary>
-[RequireComponent(typeof(Collider))] // ȷ����ť������ײ�幩���߼��
+
+[RequireComponent(typeof(XRSimpleInteractable))]
 public class Button3D : MonoBehaviour
 {
-    [Header("��ť��ʶ")]
-    [Tooltip("��Ӧ�����ַ�������Ϊ��д��ĸ A/B/C/D")]
+    [Header("按钮标识")]
+    [Tooltip("对应的字符，建议为大写字母 A/B/C/D")]
     public char buttonId;
 
-    [Header("��ѹ��������")]
-    [SerializeField] private float pressScale = 0.9f;      // ��ѹʱ�����ű���
-    [SerializeField] private float animationDuration = 0.1f; // ����ʱ��
+    [Header("按压动画参数")]
+    [SerializeField] private float pressScale = 0.9f;      // 按压时缩放比例
+    [SerializeField] private float animationDuration = 0.1f; // 动画时长
     [SerializeField] private AnimationCurve pressCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    [Header("VR Touch Settings")]
-    [Tooltip("Tag assigned to VR controller objects (create this tag in Unity and assign it to both controller GameObjects)")]
-    [SerializeField] private string controllerTag = "VRController";
+    [Header("XR Interactable")]
+    [SerializeField] private XRSimpleInteractable interactable;
+
+    [Header("Cooldown")]
     [Tooltip("Cooldown in seconds between repeated triggers to prevent double-firing")]
     [SerializeField] private float pressCooldown = 1f;
 
@@ -29,46 +27,63 @@ public class Button3D : MonoBehaviour
     private Coroutine activeAnimation;
     private bool isOnCooldown = false;
 
+    void Reset()
+    {
+        interactable = GetComponent<XRSimpleInteractable>();
+    }
+
     void Start()
     {
         originalScale = transform.localScale;
 
-        // ��У�鰴ťID
+        if (interactable == null)
+            interactable = GetComponent<XRSimpleInteractable>();
+
+        // 校验按钮ID
         if (buttonId != 'A' && buttonId != 'B' && buttonId != 'C' && buttonId != 'D')
         {
-            Debug.LogWarning($"��ť {gameObject.name} �� buttonId ����Ϊ {buttonId}����ֻ֧�� A/B/C/D");
+            Debug.LogWarning($"按钮 {gameObject.name} 的 buttonId 被设为 {buttonId}，建议只支持 A/B/C/D");
         }
     }
 
+    void OnEnable()
+    {
+        if (interactable == null)
+            interactable = GetComponent<XRSimpleInteractable>();
+        if (interactable != null)
+            interactable.selectEntered.AddListener(OnSelectEntered);
+    }
+
+    void OnDisable()
+    {
+        if (interactable != null)
+            interactable.selectEntered.RemoveListener(OnSelectEntered);
+    }
+
+    private void OnSelectEntered(SelectEnterEventArgs args)
+    {
+        if (isOnCooldown) return;
+
+        Debug.Log($"Button {gameObject.name} poke select from {args.interactorObject}");
+        Press();
+        StartCoroutine(PressCooldown());
+    }
+
     /// <summary>
-    /// �ⲿ���ã�ͨ������������ģ�鴥������ִ�а�ѹЧ����֪ͨ���й�����
+    /// 外部调用：通过交互模块触发按钮，执行按压效果并通知相关模块
     /// </summary>
     public void Press()
     {
-        // ���Ű�ѹ����
+        // 执行按压动画
         if (activeAnimation != null)
             StopCoroutine(activeAnimation);
         activeAnimation = StartCoroutine(AnimatePress());
 
-        // ֪ͨ���Ĺ�����
+        // 通知核心模块
         SequenceManager.Instance?.OnButtonPressed(buttonId);
     }
 
-    /// <summary>
-    /// Called when a VR controller collider enters this button's trigger zone.
-    /// The button's Collider must have "Is Trigger" checked.
-    /// The controller GameObject must carry the Tag matching controllerTag.
-    /// </summary>
-    private void OnTriggerEnter(Collider other)
-    {
-        if (isOnCooldown) return;
-        if (!other.CompareTag(controllerTag)) return;
-
-        Press();
-        StartCoroutine(PressCoooldown());
-    }
-
-    private IEnumerator PressCoooldown()
+    private IEnumerator PressCooldown()
     {
         isOnCooldown = true;
         yield return new WaitForSeconds(pressCooldown);
@@ -81,7 +96,7 @@ public class Button3D : MonoBehaviour
         Vector3 startScale = originalScale;
         Vector3 targetScale = originalScale * pressScale;
 
-        // ������С
+        // 压下去
         while (elapsed < animationDuration)
         {
             float t = elapsed / animationDuration;
@@ -92,7 +107,7 @@ public class Button3D : MonoBehaviour
         }
         transform.localScale = targetScale;
 
-        // ����ָ�
+        // 弹回来
         elapsed = 0f;
         while (elapsed < animationDuration)
         {
@@ -106,4 +121,3 @@ public class Button3D : MonoBehaviour
         activeAnimation = null;
     }
 }
-

@@ -8,6 +8,8 @@ public class Bullet : MonoBehaviour
     public float defaultDamage = 1f;
     public float lifeTime = 3f;
 
+    private bool _hasHit = false;
+
     void Start()
     {
         Destroy(gameObject, lifeTime); // 超过时间自动销毁
@@ -21,10 +23,13 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (_hasHit) return;
+
         Debug.Log("子弹碰到: " + other.name);
         // 玩家子弹击中怪物
         if (type == BulletType.Player && other.CompareTag("Enemy"))
         {
+            _hasHit = true;
             Enemy enemy = other.GetComponent<Enemy>();
             if (enemy != null)
                 enemy.Die();
@@ -33,15 +38,39 @@ public class Bullet : MonoBehaviour
         // 怪物子弹击中玩家
         else if (type == BulletType.Enemy && other.CompareTag("Player"))
         {
-            PlayerHealth playerHealth = other.GetComponent<PlayerHealth>();
+            PlayerHealth playerHealth = ResolvePlayerHealth(other);
             if (playerHealth != null)
+            {
+                _hasHit = true;
                 playerHealth.TakeDamage(defaultDamage);
-            Destroy(gameObject);
+                Destroy(gameObject);
+            }
         }
         // 碰到其他物体（如墙壁）也可销毁
         else if (!other.CompareTag("Enemy") && !other.CompareTag("Player"))
         {
+            _hasHit = true;
             Destroy(gameObject);
         }
+    }
+
+    private PlayerHealth ResolvePlayerHealth(Collider other)
+    {
+        PlayerHealth ph = other.GetComponent<PlayerHealth>();
+        if (ph != null) return ph;
+
+        ph = other.GetComponentInParent<PlayerHealth>();
+        if (ph != null) return ph;
+
+        if (other.attachedRigidbody != null)
+        {
+            ph = other.attachedRigidbody.GetComponent<PlayerHealth>();
+            if (ph != null) return ph;
+
+            ph = other.attachedRigidbody.GetComponentInParent<PlayerHealth>();
+            if (ph != null) return ph;
+        }
+
+        return null;
     }
 }
