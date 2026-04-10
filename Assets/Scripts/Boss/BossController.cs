@@ -141,6 +141,46 @@ public class BossController : MonoBehaviour
     private Renderer      bossRenderer;
 
     // ─────────────────────────────────────────────
+    // 动画（纯代码控制，无需在 Animator 中配置 Transition / Parameter）
+    // ─────────────────────────────────────────────
+    private Animator animator;
+    private bool  isDead = false;
+
+    // 动画状态名（必须与 Animator Controller 中的 State 名称一致）
+    private const string ANIM_IDLE            = "Idle";
+    private const string ANIM_ATTACK01        = "Attack01";
+    private const string ANIM_ATTACK02        = "Attack02";
+    private const string ANIM_BEEN_ATTACKED   = "BeenAttacked";
+    private const string ANIM_BEEN_ATTACKED01 = "BeenAttacked01";
+    private const string ANIM_BEEN_ATTACKED02 = "BeenAttacked02";
+    private const string ANIM_TURN90          = "Turn90";
+    private const string ANIM_DEATH           = "Death";
+
+    // 动画过渡时间
+    private const float ANIM_FADE_TIME = 0.15f;
+
+    /// <summary> 纯代码切换动画状态 </summary>
+    private void PlayAnim(string stateName, float fadeTime = ANIM_FADE_TIME)
+    {
+        if (animator == null || isDead) return;
+        animator.CrossFadeInFixedTime(stateName, fadeTime);
+    }
+
+    /// <summary> 播放一次性动画后自动回到 Idle </summary>
+    private IEnumerator PlayAnimThenIdle(string stateName, float fadeTime = ANIM_FADE_TIME)
+    {
+        PlayAnim(stateName, fadeTime);
+        // 等待一帧让 Animator 进入新状态
+        yield return null;
+        // 获取当前动画片段长度
+        AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
+        yield return new WaitForSeconds(info.length);
+        // 动画播完回到 Idle
+        if (!isDead)
+            PlayAnim(ANIM_IDLE);
+    }
+
+    // ─────────────────────────────────────────────
     // Unity 生命周期
     // ─────────────────────────────────────────────
 
@@ -148,6 +188,11 @@ public class BossController : MonoBehaviour
     {
         currentHealth = maxHealth;
         bossStartTime = Time.time;
+
+        // 获取 Animator
+        animator = GetComponentInChildren<Animator>();
+        if (animator == null)
+            Debug.LogWarning("[Boss] 未找到 Animator 组件！动画将无法播放。");
 
         // 寻找玩家
         GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -249,6 +294,9 @@ public class BossController : MonoBehaviour
     {
         if (bullet1Prefab == null) return;
 
+        // 播放攻击动画：狂暴用 Attack02，普通用 Attack01
+        StartCoroutine(PlayAnimThenIdle(isBerserk ? ANIM_ATTACK02 : ANIM_ATTACK01));
+
         Transform origin = (firePoint != null) ? firePoint : transform;
         Vector3   dir    = (playerTransform.position - origin.position).normalized;
 
@@ -290,6 +338,13 @@ public class BossController : MonoBehaviour
 
         Debug.Log($"[Boss] 受到伤害 {actualDamage}，当前血量：{currentHealth}/{maxHealth}");
 
+        // 播放受击动画（三个受击动画随机选择）
+        if (animator != null)
+        {
+            string[] hitAnims = { ANIM_BEEN_ATTACKED, ANIM_BEEN_ATTACKED01, ANIM_BEEN_ATTACKED02 };
+            StartCoroutine(PlayAnimThenIdle(hitAnims[UnityEngine.Random.Range(0, hitAnims.Length)]));
+        }
+
         CheckPhaseTransitions();
 
         if (currentHealth <= 0f) Die();
@@ -318,6 +373,9 @@ public class BossController : MonoBehaviour
     {
         currentPhase = 2;
         Debug.Log("[Boss] ─── 进入第二阶段！开始 5 秒无敌期 ───");
+
+        // 播放转身动画表示阶段切换
+        yield return StartCoroutine(PlayAnimThenIdle(ANIM_TURN90));
 
         isImmune = true;
         yield return new WaitForSeconds(immunityDuration);
@@ -470,6 +528,8 @@ public class BossController : MonoBehaviour
         if (isBerserk) return;
         isBerserk = true;
 
+        StartCoroutine(PlayAnimThenIdle(ANIM_TURN90));
+
         if (berserkParticleEffect != null)
         {
             // 将粒子颜色改为红色（如已在粒子系统中配置则忽略此步）
@@ -494,6 +554,10 @@ public class BossController : MonoBehaviour
     void Die()
     {
         Debug.Log("[Boss] Boss 被击败！");
+        isDead = true;
+
+        // 播放死亡动画
+        PlayAnim(ANIM_DEATH);
 
         // 清除所有水晶
         foreach (Crystal c in activeCrystals)
@@ -503,8 +567,16 @@ public class BossController : MonoBehaviour
         if (berserkParticleEffect != null) berserkParticleEffect.Stop();
         if (bossGlowLight          != null) bossGlowLight.enabled = false;
 
-        // TODO：播放死亡动画、掉落奖励、触发过场动画等
         OnBossDied?.Invoke();
+
+        // 延迟禁用，留时间给死亡动画播放
+        StartCoroutine(DeathDelayRoutine());
+    }
+
+    IEnumerator DeathDelayRoutine()
+    {
+        // 等待死亡动画播放完毕（约 2 秒，可根据 Death.fbx 时长调整）
+        yield return new WaitForSeconds(2f);
         gameObject.SetActive(false);
     }
 
