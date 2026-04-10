@@ -2085,6 +2085,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4972829512125012095, guid: 5fee5fafb6177f342b53afcf83afa65e, type: 3}
   m_PrefabInstance: {fileID: 367698742}
   m_PrefabAsset: {fileID: 0}
+--- !u!198 &379941418 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 5933654713500684915, guid: 6f3a1671694932d448199415e7934482, type: 3}
+  m_PrefabInstance: {fileID: 5802291450857030513}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &384874151
 GameObject:
   m_ObjectHideFlags: 0
@@ -5920,6 +5925,33 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 956686157989358915, guid: 8ea134f55222a294095e6abeb3b2bda2, type: 3}
   m_PrefabInstance: {fileID: 1365463175}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1392088808 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 496703997569412034, guid: 6f3a1671694932d448199415e7934482, type: 3}
+  m_PrefabInstance: {fileID: 5802291450857030513}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &1392088813
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1392088808}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: cec098dbc2b64b54bab8a9896a8b132d, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1001 &1445253170
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9420,11 +9452,18 @@ PrefabInstance:
     - target: {fileID: 3575620174876037203, guid: 6f3a1671694932d448199415e7934482, type: 3}
       propertyPath: berserkParticleEffect
       value: 
+      objectReference: {fileID: 379941418}
+    - target: {fileID: 7231970173870275794, guid: 6f3a1671694932d448199415e7934482, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 496703997569412034, guid: 6f3a1671694932d448199415e7934482, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1392088813}
   m_SourcePrefab: {fileID: 100100000, guid: 6f3a1671694932d448199415e7934482, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
