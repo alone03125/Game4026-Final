@@ -148,6 +148,10 @@ public class CockpitThrottle : MonoBehaviour
             characterController.Move(step);
         else
             mechaRoot.position += step;
+
+        // 移动时触发走路震动
+        if (moveDir.sqrMagnitude > 0.0001f)
+            CockpitShake.TriggerWalk();
     }
 
     Vector3 GetPlayerForwardAxis()

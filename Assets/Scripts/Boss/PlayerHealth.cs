@@ -76,6 +76,9 @@ public class PlayerHealth : MonoBehaviour
         currentHealth -= damage;
         currentHealth  = Mathf.Clamp(currentHealth, 0f, maxHealth);
 
+        // 受击震动
+        CockpitShake.TriggerHit();
+
         Debug.Log($"[Player] 受到伤害 {damage}，当前血量：{currentHealth}/{maxHealth}");
         UpdateUI();
 

@@ -103,6 +103,9 @@ public class RTShoot : MonoBehaviour
             rb.velocity = bulletOrigin.forward * bulletSpeed;
         }
 
+        // 射击震动
+        CockpitShake.TriggerShoot();
+
         // 每发子弹增加热量
         barrelHeat += heatPerBullet;
         if (barrelHeat >= overheatThreshold)

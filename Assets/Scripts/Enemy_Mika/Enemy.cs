@@ -9,6 +9,11 @@ public class Enemy : MonoBehaviour
 
     /// <summary>当前是否处于蓄力预警阶段（供 UI 系统读取）</summary>
     public bool IsCharging => _warningActive || _aimLineActive;
+
+    [Header("生命值")]
+    public float maxHealth = 30f;
+    private float _currentHealth;
+
     [Header("移动参数")]
     public float baseSpeed = 2f;               // 基础速度
     public float gravitySensitivity = 1f;      // 重力对速度的影响系数
@@ -49,6 +54,10 @@ public class Enemy : MonoBehaviour
     public AudioClip chargeSound;                 // 蓄力音效（开始预警时播放）
     public AudioClip shootSound;                  // 开枪音效（可不赋値）
     [Range(0f, 1f)] public float chargeSoundVolume = 0.8f;
+
+    [Header("死亡爆炸特效")]
+    [Tooltip("死亡时实例化的爆炸粒子特效预制体，留空则用代码生成")]
+    public ParticleSystem explosionPrefab;
 
     private Transform player;
     private Vector3 velocity;                  // 当前速度向量
@@ -431,12 +440,90 @@ public class Enemy : MonoBehaviour
 
     public void Die()
     {
+        // 生成爆炸特效
+        SpawnExplosion();
+
         if (GameManager.Instance != null)
             GameManager.Instance.OnEnemyKilled();
         if (spawner != null)
             spawner.OnEnemyDied(gameObject);
         else
             Destroy(gameObject);
+    }
+
+    public void TakeDamage(float damage)
+    {
+        _currentHealth -= damage;
+        if (_currentHealth <= 0f)
+            Die();
+    }
+
+    void SpawnExplosion()
+    {
+        Vector3 pos = transform.position;
+
+        if (explosionPrefab != null)
+        {
+            // 使用粒子特效预制体
+            ParticleSystem fx = Instantiate(explosionPrefab, pos, Quaternion.identity);
+            fx.Play();
+            Destroy(fx.gameObject, fx.main.duration + fx.main.startLifetime.constantMax);
+        }
+        else
+        {
+            // 代码生成简易爆炸粒子
+            GameObject fxObj = new GameObject("Explosion");
+            fxObj.transform.position = pos;
+
+            ParticleSystem ps = fxObj.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            var main = ps.main;
+            main.loop = false;
+            main.duration = 0.3f;
+            main.startLifetime = 0.6f;
+            main.startSpeed = new ParticleSystem.MinMaxCurve(3f, 8f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.2f, 0.5f);
+            main.startColor = new Color(1f, 0.4f, 0.1f, 1f);  // 橙红色
+            main.gravityModifier = 0.5f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            var emission = ps.emission;
+            emission.SetBursts(new ParticleSystem.Burst[] {
+                new ParticleSystem.Burst(0f, 30)
+            });
+            emission.rateOverTime = 0f;
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.3f;
+
+            var sizeOverLifetime = ps.sizeOverLifetime;
+            sizeOverLifetime.enabled = true;
+            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f,
+                AnimationCurve.Linear(0f, 1f, 1f, 0f));
+
+            var colorOverLifetime = ps.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient grad = new Gradient();
+            grad.SetKeys(
+                new GradientColorKey[] {
+                    new GradientColorKey(new Color(1f, 0.6f, 0.1f), 0f),
+                    new GradientColorKey(new Color(0.3f, 0.1f, 0.1f), 1f)
+                },
+                new GradientAlphaKey[] {
+                    new GradientAlphaKey(1f, 0f),
+                    new GradientAlphaKey(0f, 1f)
+                }
+            );
+            colorOverLifetime.color = grad;
+
+            var renderer = fxObj.GetComponent<ParticleSystemRenderer>();
+            renderer.material = new Material(Shader.Find("Particles/Standard Unlit"));
+
+            ps.Play();
+            Destroy(fxObj, ps.main.duration + ps.main.startLifetime.constantMax);
+        }
     }
 
     public void SetSpawner(EnemySpawner sp)
@@ -446,6 +533,8 @@ public class Enemy : MonoBehaviour
 
     public void ResetState()
     {
+        // 重置生命值
+        _currentHealth = maxHealth;
         // 重置速度
         velocity = Vector3.zero;
         directionTimer = 0f;

@@ -49,6 +49,20 @@ public class PlayerBulletMover : MonoBehaviour
         if (other.CompareTag("Player") || other.CompareTag("PlayerBullet") || other.CompareTag("PlayerAttack"))
             return;
 
+        // 命中普通敌人
+        if (other.CompareTag("Enemy"))
+        {
+            Enemy enemy = other.GetComponent<Enemy>();
+            if (enemy != null)
+            {
+                DamageSource ds = GetComponent<DamageSource>();
+                float dmg = (ds != null) ? ds.damage : 10f;
+                enemy.TakeDamage(dmg);
+            }
+            Destroy(gameObject);
+            return;
+        }
+
         // 命中 Boss
         if (other.CompareTag("Boss"))
         {
