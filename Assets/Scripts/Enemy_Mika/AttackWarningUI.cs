@@ -31,29 +31,38 @@ public class AttackWarningUI : MonoBehaviour
     [Tooltip("箭头的 UI 尺寸（画布单位）")]
     public float arrowSize = 0.08f;
 
-    [Header("视野判断")]
-    [Tooltip("这个角度内的敌人被认为在视野内，不显示箭头。建议设为相机 FOV 的一半左右，例如 FOV=90 则设 45）")]
-    [Range(10f, 90f)]
-    public float fovHalfAngle = 45f;
-
     [Header("视觉样式")]
-    public Color arrowColor        = new Color(1f, 0.25f, 0.25f, 0.9f);
-    public Color arrowChargingColor = new Color(1f, 1f, 0f, 1f);  // 蓄力时的闪烁颜色（默认黄色）
-
-    [Header("脉冲动画")]
+    public Color arrowColor = new Color(1f, 0.25f, 0.25f, 0.9f);
+    public Color arrowChargingColor = new Color(1f, 1f, 0f, 1f);  // 蓄力时闪烁颜色（黄色）
     [Range(0f, 1f)]
-    public float normalAlpha = 0.7f;  // 非蓄力时箭头的固定透明度
+    public float normalAlpha = 0.7f;  // 非蓄力时箭头透明度
 
     [Header("蓄力闪烁")]
-    public float blinkSpeed   = 8f;   // 闪烁频率（每秒闪烁次数）
+    public float blinkSpeed   = 8f;   // 闪烁频率（每秒）
     [Range(0f, 1f)]
     public float blinkMinAlpha = 0.1f; // 闪烁最低透明度
+
+    [Header("准星红点")]
+    [Tooltip("红点半径（画布单位）")]
+    public float crosshairSize = 0.02f;
+    public Color crosshairColor = Color.red;
+
+    [Header("脉冲动画")]
+    public float pulseSpeed  = 5f;
+    [Range(0f, 0.5f)]
+    public float pulseAmount = 0.25f;
 
     // ─── 私有 ───────────────────────────────────────────────
     private Camera         _cam;
     private RectTransform  _canvasRect;
+    private RectTransform  _crosshairRT;
     private readonly List<RectTransform> _arrows      = new List<RectTransform>();
     private readonly List<Image>         _arrowImages = new List<Image>();
+
+    /// <summary>准星在世界空间中的位置，供外部脚本读取用于瞄准</summary>
+    public Vector3 CrosshairWorldPos => _crosshairRT != null
+        ? _crosshairRT.position
+        : transform.position;
 
     void Awake()
     {
@@ -69,6 +78,9 @@ public class AttackWarningUI : MonoBehaviour
             enabled = false;
             return;
         }
+
+        // ── 创建准星红点 ──
+        CreateCrosshair();
 
         // 预创建箭头对象池
         for (int i = 0; i < maxArrows; i++)
@@ -134,34 +146,26 @@ public class AttackWarningUI : MonoBehaviour
             Vector2 offset = new Vector2(localDir.x, localDir.z);
             if (offset.sqrMagnitude < 1e-6f) offset = Vector2.up;
 
-            // ── 如果敌人在视野内则跳过，不显示箭头 ──
-            // localDir.z > 0 表示敌人在前方；同时水平角度和垂直角度均在阈値内才认为在视野内
-            if (localDir.z > 0f)
-            {
-                float cosThreshold = Mathf.Cos(fovHalfAngle * Mathf.Deg2Rad);
-                // 分别检查水平方向（X/Z平面）和垂直方向（Y/Z平面）是否均在阈値内
-                float hAngleCos = localDir.z / Mathf.Sqrt(localDir.z * localDir.z + localDir.x * localDir.x + 1e-8f);
-                float vAngleCos = localDir.z / Mathf.Sqrt(localDir.z * localDir.z + localDir.y * localDir.y + 1e-8f);
-                if (hAngleCos >= cosThreshold && vAngleCos >= cosThreshold)
-                    continue;  // 在视野内，跳过不显示箭头
-            }
-
             // ── 夹到画布边缘 ──
             Vector2 edgePos = ClampToEdge(offset.normalized, halfW, halfH);
 
             // ── 设置箭头位置 / 旋转 / 动画 ──
-            RectTransform rt  = _arrows[idx];
-            Image         img = _arrowImages[idx];
+            RectTransform rt = _arrows[idx];
             rt.gameObject.SetActive(true);
             rt.anchoredPosition3D = new Vector3(edgePos.x, edgePos.y, 0f);  // Z 明确归零
 
-            // 箭头尖端指向敌人方向
+            // 箭头尖端指向敌人方向（offset 方向 = 从画布中心朝敌人）
             float angle = Vector2.SignedAngle(Vector2.up, offset);
             rt.localRotation = Quaternion.Euler(0f, 0f, angle);
 
+            // 呼吸式脉冲缩放（每个箭头相位略有偏移，避免同步）
+            float pulse = 1f + Mathf.Sin(Time.time * pulseSpeed + idx * 1.3f) * pulseAmount;
+            rt.localScale = Vector3.one * pulse;
+
+            // ── 蓄力闪烁 / 正常颜色 ──
+            Image img = _arrowImages[idx];
             if (enemy.IsCharging)
             {
-                // 蓄力闪烁：只改变 Alpha，不改变尺寸
                 float blinkAlpha = Mathf.Lerp(blinkMinAlpha, 1f,
                     (Mathf.Sin(Time.time * blinkSpeed * Mathf.PI) + 1f) * 0.5f);
                 Color c = arrowChargingColor;
@@ -170,16 +174,32 @@ public class AttackWarningUI : MonoBehaviour
             }
             else
             {
-                // 正常状态：固定颜色和透明度
                 Color c = arrowColor;
                 c.a = normalAlpha;
                 if (img != null) img.color = c;
             }
-            // 尺寸始终保持不变
-            rt.localScale = Vector3.one;
 
             idx++;
         }
+    }
+
+    /// <summary>在画布中心创建一个圆形红点准星</summary>
+    void CreateCrosshair()
+    {
+        GameObject dot = new GameObject("Crosshair");
+        dot.transform.SetParent(transform, false);
+
+        Image img = dot.AddComponent<Image>();
+        img.color = crosshairColor;
+        // 使用默认白色 Sprite，看起来是方形；如需圆形可日后替换 Sprite
+
+        _crosshairRT = dot.GetComponent<RectTransform>();
+        _crosshairRT.anchorMin = new Vector2(0.5f, 0.5f);
+        _crosshairRT.anchorMax = new Vector2(0.5f, 0.5f);
+        _crosshairRT.pivot     = new Vector2(0.5f, 0.5f);
+        _crosshairRT.sizeDelta = Vector2.one * crosshairSize;
+        _crosshairRT.anchoredPosition3D = Vector3.zero;
+        _crosshairRT.localScale = Vector3.one;
     }
 
     /// <summary>将归一化方向投影到矩形（halfW × halfH）的边缘点</summary>

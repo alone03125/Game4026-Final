@@ -99,7 +99,7 @@ public class RTShoot : MonoBehaviour
         if (rb != null)
         {
             rb.isKinematic = false;
-            rb.useGravity = true;
+            rb.useGravity = false;
             rb.velocity = bulletOrigin.forward * bulletSpeed;
         }
 

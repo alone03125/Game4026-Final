@@ -240,14 +240,14 @@ MonoBehaviour:
   gravitySensitivity: 1
   randomMoveWeight: 0.5
   directionChangeInterval: 0.5
-  maxSpeed: 50
-  acceleration: 5
+  maxSpeed: 15
+  acceleration: 3
   steeringForce: 2
   verticalMovementScale: 0.8
   minDistanceToPlayer: 18
   boundaryRepulsionDistance: 5
   enemyBulletPrefab: {fileID: 7150022249518444547, guid: c7dbca94e48fca749adf6fb4c7ac80f2, type: 3}
-  shootInterval: 5
+  shootInterval: 8
   bulletSpeed: 8
   warningDuration: 2
   warningEffect: {fileID: 148285926945870227}

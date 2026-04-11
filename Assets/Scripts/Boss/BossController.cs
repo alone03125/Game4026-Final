@@ -294,13 +294,34 @@ public class BossController : MonoBehaviour
     {
         if (bullet1Prefab == null) return;
 
-        // 播放攻击动画：狂暴用 Attack02，普通用 Attack01
-        StartCoroutine(PlayAnimThenIdle(isBerserk ? ANIM_ATTACK02 : ANIM_ATTACK01));
+        // 播放攻击动画，等前摇结束后再发射子弹
+        string attackAnim = (currentPhase >= 2) ? ANIM_ATTACK02 : ANIM_ATTACK01;
+        StartCoroutine(ShootAfterWindUp(attackAnim));
+    }
 
-        Transform origin = (firePoint != null) ? firePoint : transform;
-        Vector3   dir    = (playerTransform.position - origin.position).normalized;
+    IEnumerator ShootAfterWindUp(string attackAnim)
+    {
+        PlayAnim(attackAnim);
+        // 等待一帧让 Animator 进入新状态
+        yield return null;
+        // 获取攻击动画长度，前摇为动画长度的一半
+        AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
+        yield return new WaitForSeconds(info.length * 0.5f);
 
-        SpawnBullet(origin.position, dir);
+        // 前摇结束，发射子弹
+        if (isDead || playerTransform == null) yield break;
+
+        string originName = (currentPhase >= 2) ? "Bossbullet2" : "Bossbullet1";
+        Transform bulletOrigin = transform.Find(originName);
+        Vector3 spawnPos = (bulletOrigin != null) ? bulletOrigin.position : transform.position;
+        Vector3   dir    = (playerTransform.position - spawnPos).normalized;
+
+        SpawnBullet(spawnPos, dir);
+
+        // 等待剩余动画播完后回到 Idle
+        yield return new WaitForSeconds(info.length * 0.5f);
+        if (!isDead)
+            PlayAnim(ANIM_IDLE);
     }
 
     void SpawnBullet(Vector3 position, Vector3 direction)
@@ -554,10 +575,10 @@ public class BossController : MonoBehaviour
     void Die()
     {
         Debug.Log("[Boss] Boss 被击败！");
-        isDead = true;
 
-        // 播放死亡动画
+        // 先播放死亡动画，再标记 isDead（PlayAnim 会检查 isDead）
         PlayAnim(ANIM_DEATH);
+        isDead = true;
 
         // 清除所有水晶
         foreach (Crystal c in activeCrystals)
