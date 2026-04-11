@@ -191,4 +191,7 @@ public class PlayerHealth : MonoBehaviour
     public float GetCurrentHealth() => currentHealth;
     public float GetHealthPercent() => currentHealth / maxHealth;
     public bool  IsDead()           => isDead;
+
+    public int GetShieldCount()    => shieldCount;
+    public int GetMaxShieldCount() => MAX_SHIELD_COUNT;
 }

@@ -127,6 +127,12 @@ public class RTShoot : MonoBehaviour
         Debug.Log("[RTShoot] Heat reset by repair sequence.");
     }
 
+    // ─── UIManager 读取接口 ───
+    public float GetHeat()        => barrelHeat;
+    public float GetMaxHeat()     => overheatThreshold;
+    public float GetHeatPercent() => overheatThreshold > 0f ? barrelHeat / overheatThreshold : 0f;
+    public bool  IsOverheated()   => isOverheated;
+
     private void TryGetRightHandDevice()
     {
         rightHandDevice = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);

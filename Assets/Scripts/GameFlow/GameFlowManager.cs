@@ -253,6 +253,18 @@ public class GameFlowManager : MonoBehaviour
 
     public FlowState GetCurrentState() => currentState;
 
+    public int GetCurrentKills() => currentKills;
+
+    public int GetRequiredKills()
+    {
+        if (gameManager != null && currentStageIndex < gameManager.killsRequiredForNextStage.Length)
+            return gameManager.killsRequiredForNextStage[currentStageIndex];
+        return 0;
+    }
+
+    public GameObject GetActiveBeacon() => activeBeacon;
+    public GameObject GetActiveBoss()   => activeBoss;
+
     void ValidateReferences()
     {
         if (gameManager == null)
