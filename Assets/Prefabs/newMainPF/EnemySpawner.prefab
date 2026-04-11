@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5871460390694771292
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4868267378110063964}
+  - component: {fileID: 1322259270318084705}
+  - component: {fileID: 4867738212499244725}
+  m_Layer: 0
+  m_Name: EnemySpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4868267378110063964
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5871460390694771292}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.31011677, y: 7.0546675, z: -2.0268416}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1322259270318084705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5871460390694771292}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b25ac5721228c9243af97c54fc79764a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stages:
+  - horizontalRange: 40
+    upperOffset: 40
+    lowerOffset: -1
+  - horizontalRange: 20
+    upperOffset: 10
+    lowerOffset: 5
+  - horizontalRange: 20
+    upperOffset: 10
+    lowerOffset: 5
+  enemyPool: {fileID: 0}
+  spawnInterval: 0
+  maxEnemyCount: 15
+  useDynamicSpawnRate: 1
+  targetEnemyCount: 10
+  minSpawnInterval: 1
+  maxSpawnInterval: 10
+  stageAdjustments:
+  - addCount: 2
+    removeCount: 2
+  - addCount: 3
+    removeCount: 3
+  - addCount: 4
+    removeCount: 4
+  mainCamera: {fileID: 0}
+  maxSpawnAttempts: 30
+--- !u!114 &4867738212499244725
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5871460390694771292}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 000be7afdad5f8c43898e712477f69bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  killKey: 107
