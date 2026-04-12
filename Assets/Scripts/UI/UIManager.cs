@@ -82,6 +82,10 @@ public class UIManager : MonoBehaviour
     private bool _phaseBlinking;
     private Color _phaseOriginalColor;
 
+    // ─── 生命值随机化缓存 ─────────────────────────
+    private float _lastHealthValue = -1f;   // 上一次的后端当前生命值
+    private int _randomOffset = 0;           // 当前使用的随机偏移量 (0~49)
+
     // ─────────────────────────────────────────────
     // 生命周期
     // ─────────────────────────────────────────────
@@ -109,12 +113,23 @@ public class UIManager : MonoBehaviour
             if (pb != null) playerTransform = pb.transform;
         }
 
+        // 确保所有进度条 Image 类型为 Filled，并初始化 fillAmount 为 0
+        InitBarAsFilled(shieldBar);
+        InitBarAsFilled(healthBar);
+        InitBarAsFilled(heatBar);
+        InitBarAsFilled(bossHealthBar);
+
         // Boss UI 默认隐藏
         if (bossHealthRoot != null) bossHealthRoot.SetActive(false);
     }
 
     void Update()
     {
+        // 懒查找：如果 Start 时还没找到，每帧尝试重新查找
+        if (playerHealth == null) playerHealth = FindObjectOfType<PlayerHealth>();
+        if (rtShoot == null) rtShoot = FindObjectOfType<RTShoot>();
+        if (gameFlowManager == null) gameFlowManager = GameFlowManager.Instance;
+
         UpdateShieldUI();
         UpdateHealthUI();
         UpdateHeatUI();
@@ -139,19 +154,59 @@ public class UIManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────
-    // 生命值
+    // 生命值（带 UI 随机化偏移）
     // ─────────────────────────────────────────────
 
     void UpdateHealthUI()
     {
         if (playerHealth == null) return;
 
-        float current = playerHealth.GetCurrentHealth();
-        float max = playerHealth.maxHealth;
-        float ratio = max > 0f ? current / max : 0f;
+        float rawCurrent = playerHealth.GetCurrentHealth();
+        float rawMax = playerHealth.maxHealth;
 
-        if (healthBar != null) healthBar.fillAmount = ratio;
-        if (healthText != null) healthText.text = $"{Mathf.CeilToInt(current)} / {Mathf.CeilToInt(max)}";
+        // UI 最大生命值 = 后端最大生命值 × 50
+        float uiMax = rawMax * 50f;
+
+        float uiCurrent;
+
+        // 边界情况：后端生命值为 0 或满值，UI 直接对应 0 或满值
+        if (rawCurrent <= 0f)
+        {
+            uiCurrent = 0f;
+            // 重置缓存，避免下次从中间状态开始时使用旧偏移
+            _lastHealthValue = -1f;
+        }
+        else if (rawCurrent >= rawMax - 0.001f) // 允许小误差
+        {
+            uiCurrent = uiMax;
+            _lastHealthValue = -1f;
+        }
+        else
+        {
+            // 后端生命值发生变化时，重新生成随机偏移量 (0~49)
+            if (!Mathf.Approximately(rawCurrent, _lastHealthValue))
+            {
+                _randomOffset = Random.Range(0, 50);
+                _lastHealthValue = rawCurrent;
+            }
+
+            uiCurrent = rawCurrent * 50f - _randomOffset;
+
+            // 钳位到有效范围 [0, uiMax]
+            uiCurrent = Mathf.Clamp(uiCurrent, 0f, uiMax);
+        }
+
+        // 更新进度条和文本
+        if (healthBar != null)
+        {
+            float ratio = uiMax > 0f ? uiCurrent / uiMax : 0f;
+            healthBar.fillAmount = ratio;
+        }
+
+        if (healthText != null)
+        {
+            healthText.text = $"{Mathf.CeilToInt(uiCurrent)} / {Mathf.CeilToInt(uiMax)}";
+        }
     }
 
     // ─────────────────────────────────────────────
@@ -297,15 +352,35 @@ public class UIManager : MonoBehaviour
     // 工具
     // ─────────────────────────────────────────────
 
+    /// <summary>
+    /// 强制将 Image 设为 Filled 类型（水平从左到右），并将初始 fillAmount 设为 0。
+    /// </summary>
+    static void InitBarAsFilled(Image bar)
+    {
+        if (bar == null) return;
+        bar.type = Image.Type.Filled;
+        bar.fillMethod = Image.FillMethod.Horizontal;
+        bar.fillOrigin = (int)Image.OriginHorizontal.Left;
+        bar.fillAmount = 0f;
+    }
+
     float GetBeaconDistance()
     {
-        if (playerTransform == null || gameFlowManager == null) return -1f;
+        if (gameFlowManager == null) return -1f;
 
         GameObject beacon = gameFlowManager.GetActiveBeacon();
         if (beacon == null) return -1f;
 
+        // 优先使用 playerTransform，若为空则用主摄像机（VR 头显始终跟随玩家）
+        Vector3 pPos;
+        if (playerTransform != null)
+            pPos = playerTransform.position;
+        else if (Camera.main != null)
+            pPos = Camera.main.transform.position;
+        else
+            return -1f;
+
         // XZ 平面距离
-        Vector3 pPos = playerTransform.position;
         Vector3 bPos = beacon.transform.position;
         float dx = pPos.x - bPos.x;
         float dz = pPos.z - bPos.z;

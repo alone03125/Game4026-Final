@@ -20,6 +20,13 @@ public class CockpitSimpleTurn : MonoBehaviour
     // true: Keeps spinning as long as hand remains on the side (depending on position)
     [SerializeField] bool usePositionBasedTurn = true;
 
+    [Header("Pitch (俯仰)")]
+    [SerializeField] float pitchDegreesPerSecond = 60f;
+    [Tooltip("低头最大角度（正值，实际为负方向）")]
+    [SerializeField] float maxPitchDown = 15f;
+    [Tooltip("抬头最大角度")]
+    [SerializeField] float maxPitchUp = 35f;
+
     [Header("Velocity")]
     [SerializeField] float handSpeedDeadzoneLR = 0.05f;
     [SerializeField] float stillDeltaMeters = 0.0015f;
@@ -43,6 +50,7 @@ public class CockpitSimpleTurn : MonoBehaviour
     Vector3 _prevHandLocal;
     Vector3 _grabNeutralLocal;
     float _stillTimer;
+    float _currentPitch;
 
     float GetGravitySpeedMultiplier()
     {
@@ -137,29 +145,50 @@ public class CockpitSimpleTurn : MonoBehaviour
         float gMul = GetGravitySpeedMultiplier();
 
         float rx;
+        float fx;
 
         if (usePositionBasedTurn)
         {
             Vector3 nowLocal = reference.InverseTransformPoint(handNow);
             Vector3 dispLocal = nowLocal - _grabNeutralLocal;
             Vector3 dispWorld = reference.TransformVector(dispLocal);
+
+            // 水平偏移（左右 → yaw）
+            Vector3 dispH = dispWorld;
             if (flattenToHorizontal)
-                dispWorld.y = 0f;
+                dispH.y = 0f;
 
-            float alongR = Vector3.Dot(dispWorld, right);
-            float absOff = Mathf.Abs(alongR);
+            float alongR = Vector3.Dot(dispH, right);
+            float absOffR = Mathf.Abs(alongR);
 
-            if (absOff <= positionDeadzoneMeters)
+            if (absOffR <= positionDeadzoneMeters)
             {
                 rx = 0f;
             }
             else
             {
                 float sign = Mathf.Sign(alongR);
-                float over = absOff - positionDeadzoneMeters;
+                float over = absOffR - positionDeadzoneMeters;
                 float denom = Mathf.Max(0.0001f, maxOffsetForFullSpeed - positionDeadzoneMeters);
                 float t = Mathf.Clamp01(over / denom);
                 rx = sign * t;
+            }
+
+            // 前后偏移（前/后 → pitch）
+            float alongF = -Vector3.Dot(dispH, forward);
+            float absOffF = Mathf.Abs(alongF);
+
+            if (absOffF <= positionDeadzoneMeters)
+            {
+                fx = 0f;
+            }
+            else
+            {
+                float sign = Mathf.Sign(alongF);
+                float over = absOffF - positionDeadzoneMeters;
+                float denom = Mathf.Max(0.0001f, maxOffsetForFullSpeed - positionDeadzoneMeters);
+                float t = Mathf.Clamp01(over / denom);
+                fx = sign * t;
             }
         }
         else
@@ -176,19 +205,37 @@ public class CockpitSimpleTurn : MonoBehaviour
                 _stillTimer = 0f;
 
             rx = 0f;
+            fx = 0f;
             if (_stillTimer < stillStopTime)
             {
                 float velR = Vector3.Dot(handDelta, right) / dt;
                 if (velR > handSpeedDeadzoneLR) rx = 1f;
                 else if (velR < -handSpeedDeadzoneLR) rx = -1f;
+
+                float velF = Vector3.Dot(handDelta, forward) / dt;
+                if (velF > handSpeedDeadzoneLR) fx = 1f;
+                else if (velF < -handSpeedDeadzoneLR) fx = -1f;
             }
         }
 
         LastLateralAnalog = rx;
-        LastForwardAnalog = 0f;
+        LastForwardAnalog = fx;
 
+        // ── Yaw（水平转向）──
         float yawDelta = rx * yawDegreesPerSecond * gMul * dt;
         pivot.Rotate(0f, yawDelta, 0f, Space.World);
+
+        // ── Pitch（俯仰）── 向后拉 = 抬头（pitch 减小），向前推 = 低头（pitch 增大）
+        float pitchDelta = -fx * pitchDegreesPerSecond * gMul * dt;
+        _currentPitch = Mathf.Clamp(_currentPitch + pitchDelta, -maxPitchUp, maxPitchDown);
+
+        // 将 pitch 应用到 yawPivot/xrOrigin 的本地 X 旋转（旋转整个机甲框架）
+        // 不能旋转 xrCamera，因为 VR 头显追踪会每帧覆盖其旋转
+        {
+            Vector3 pivotEuler = pivot.localEulerAngles;
+            pivotEuler.x = _currentPitch;
+            pivot.localEulerAngles = pivotEuler;
+        }
 
         handNow = GetInteractorWorldPos(_activeInteractor);
         _prevHandLocal = reference.InverseTransformPoint(handNow);

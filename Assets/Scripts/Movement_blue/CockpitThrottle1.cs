@@ -13,7 +13,7 @@ public class CockpitThrottle : MonoBehaviour
     [SerializeField] Transform motionReference;
 
     [Header("Movement")]
-    [SerializeField] float constantSpeed = 2.0f;
+    [SerializeField] float constantSpeed = 6.0f;
     [SerializeField] bool useHeadForward = true;
     [SerializeField] bool flattenToHorizontal = true;
 
