@@ -329,6 +329,14 @@ public class BossController : MonoBehaviour
         GameObject bullet1Obj = Instantiate(bullet1Prefab, position, Quaternion.LookRotation(direction));
         bullet1Obj.tag = "BossBullet";
 
+        // 让子弹忽略 Boss 自身所有碰撞体，防止刚生成就被 Boss 碰撞箱销毁
+        Collider bulletCol = bullet1Obj.GetComponent<Collider>();
+        if (bulletCol != null)
+        {
+            foreach (Collider bossCol in GetComponentsInChildren<Collider>())
+                Physics.IgnoreCollision(bulletCol, bossCol);
+        }
+
         Bullet1 bullet1 = bullet1Obj.GetComponent<Bullet1>();
         if (bullet1 != null)
             bullet1.SetDirection(direction);

@@ -14,7 +14,7 @@ public class PlayerHealth : MonoBehaviour
 
     [Header("=== 次数护盾 ===")]
     [SerializeField] private int shieldCount = 0;
-    private const int MAX_SHIELD_COUNT = 32;
+    private const int MAX_SHIELD_COUNT = 16;
 
     [Header("=== UI（可选）===")]
     [Tooltip("显示血量的 Slider，留空则忽略")]

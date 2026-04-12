@@ -48,8 +48,8 @@ public class EnemyBullet : MonoBehaviour
             return;
         }
 
-        // 忽略 Enemy 自身
-        if (other.CompareTag("Enemy")) return;
+        // 忽略 Enemy和 Boss 自身
+        if (other.CompareTag("Enemy") || other.CompareTag("Boss")) return;
 
         // 碰到其他物体（如墙壁）销毁
         _hasHit = true;

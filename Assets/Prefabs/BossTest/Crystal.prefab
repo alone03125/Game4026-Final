@@ -120,7 +120,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b02e316796098849a6422fb4a66d532, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 30
+  maxHealth: 5
   normalColor: {r: 0.9740491, g: 0, b: 1, a: 0.8}
   damagedColor: {r: 1, g: 0, b: 0, a: 1}
-  destroyEffectPrefab: {fileID: 0}
+  destroyEffectPrefab: {fileID: 7524137777388449901, guid: 87324f1a80630ea41971e07b7f8103bc, type: 3}

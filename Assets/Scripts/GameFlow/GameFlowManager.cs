@@ -234,6 +234,21 @@ public class GameFlowManager : MonoBehaviour
         }
 
         activeBoss = Instantiate(bossPrefab, bossSpawnPosition, Quaternion.identity);
+
+        // Boss 阶段持续生成少量敌人干扰玩家
+        if (enemySpawner != null && gameManager != null)
+        {
+            // 使用最后一个阶段的生成范围
+            int lastStage = Mathf.Max(0, enemySpawner.stages.Length - 1);
+            enemySpawner.SetStage(lastStage);
+            enemySpawner.maxEnemyCount = gameManager.bossStageMaxEnemies;
+            enemySpawner.SetSpawnInterval(gameManager.bossStageSpawnInterval);
+            enemySpawner.EnableSpawning();
+
+            for (int i = 0; i < gameManager.bossStageInitialSpawn; i++)
+                enemySpawner.SpawnEnemyImmediate();
+        }
+
         Debug.Log($"[GameFlowManager] Boss 已在 {bossSpawnPosition} 生成，第四阶段（Boss关）开始！");
     }
 
@@ -241,10 +256,15 @@ public class GameFlowManager : MonoBehaviour
     {
         if (currentState != FlowState.BossStage) return;
 
+        // 停止生成并清除场上所有小怪
+        if (enemySpawner != null)
+        {
+            enemySpawner.DisableSpawning();
+            enemySpawner.ClearAllEnemies();
+        }
+
         currentState = FlowState.GameOver;
         Debug.Log("[GameFlowManager] Boss 已被击败！游戏结束。");
-
-        // TODO: 游戏结束逻辑（结算界面、过场动画、返回主菜单等）
     }
 
     // ─────────────────────────────────────────────

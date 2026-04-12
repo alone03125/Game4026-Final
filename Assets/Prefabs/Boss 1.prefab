@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 282439148828463214}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.86190337, z: -0, w: 0.5070726}
-  m_LocalPosition: {x: -86.7, y: -4.99, z: 101.72}
+  m_LocalPosition: {x: -86.7, y: -0.8, z: 101.72}
   m_LocalScale: {x: 16.785475, y: 16.785475, z: 16.785475}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -38,6 +38,10 @@ Transform:
   - {fileID: 859446994777082960}
   - {fileID: 389580924482701820}
   - {fileID: 6383739745109437246}
+  - {fileID: 5281130059952163285}
+  - {fileID: 138377530708503976}
+  - {fileID: 3246683321526773054}
+  - {fileID: 2199640591958050897}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 119.062, z: 0}
 --- !u!23 &608832335078094408
@@ -125,21 +129,25 @@ MonoBehaviour:
   maxHealth: 300
   phase2HealthThreshold: 200
   phase3HealthThreshold: 100
-  bullet1Prefab: {fileID: 2883261551691535169, guid: 360fc1d916f88da4487d2b8670e7dfce, type: 3}
+  bullet1Prefab: {fileID: 7150022249518444547, guid: dd09038da82f50a42aa15c86a441cceb, type: 3}
   firePoint: {fileID: 0}
   bullet1Speed: 15
-  phase1FireRate: 0.5
-  phase1Bullet1Damage: 1
+  phase1FireRate: 0.4
+  phase1Bullet1Damage: 2
   immunityDuration: 5
   crystalPrefab: {fileID: 5407610080759841030, guid: b4fd28a26fdde5f4db3e8590f2f2a16c, type: 3}
-  crystalSpawnPoints: []
+  crystalSpawnPoints:
+  - {fileID: 5281130059952163285}
+  - {fileID: 138377530708503976}
+  - {fileID: 3246683321526773054}
+  - {fileID: 2199640591958050897}
   crystalSpawnRadius: 8
-  shieldDamageReduction: 0.493
+  shieldDamageReduction: 0.308
   bossGlowLight: {fileID: 0}
   shieldColor: {r: 0, g: 1, b: 1, a: 1}
   shieldFadeSpeed: 3
-  phase3FireRate: 0.5
-  phase3Bullet1Damage: 2
+  phase3FireRate: 1
+  phase3Bullet1Damage: 5
   berserkParticleEffect: {fileID: 4452161037852782641}
   doubleDamageTimeLimit: 300
   forceBerserkTimeLimit: 480
@@ -367,7 +375,7 @@ ParticleSystem:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-  moveWithTransform: 0
+  moveWithTransform: 1
   moveWithCustomTransform: {fileID: 0}
   scalingMode: 1
   randomSeed: 0
@@ -5181,7 +5189,7 @@ Transform:
   m_GameObject: {fileID: 1852319122800784719}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.128, y: 0.468, z: 0.24}
+  m_LocalPosition: {x: 0.042, y: 0.597, z: 0.087}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5413,6 +5421,37 @@ Transform:
   - {fileID: 7238513652091591517}
   m_Father: {fileID: 7021954668962479951}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3641170596130342491
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2199640591958050897}
+  m_Layer: 0
+  m_Name: CrystalSpw4
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2199640591958050897
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3641170596130342491}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.86190337, z: 0, w: 0.5070726}
+  m_LocalPosition: {x: 0.543, y: 0.39, z: 0.374}
+  m_LocalScale: {x: 0.059575304, y: 0.05957532, z: 0.059575304}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 986398681071074056}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3873354029475055942
 GameObject:
   m_ObjectHideFlags: 0
@@ -5445,6 +5484,37 @@ Transform:
   - {fileID: 7923591578380457197}
   - {fileID: 2760629284736259976}
   - {fileID: 5517485389568444294}
+  m_Father: {fileID: 986398681071074056}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4097497070805186970
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5281130059952163285}
+  m_Layer: 0
+  m_Name: CrystalSpw1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5281130059952163285
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4097497070805186970}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.86190337, z: 0, w: 0.5070726}
+  m_LocalPosition: {x: 0.515, y: 0.39, z: -0.382}
+  m_LocalScale: {x: 0.059575304, y: 0.05957532, z: 0.059575304}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
   m_Father: {fileID: 986398681071074056}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4209182178771870865
@@ -5849,6 +5919,37 @@ Transform:
   - {fileID: 2105765682925153304}
   m_Father: {fileID: 1317734755504562308}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &5887924713652146505
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 138377530708503976}
+  m_Layer: 0
+  m_Name: CrystalSpw2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &138377530708503976
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5887924713652146505}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.86190337, z: 0, w: 0.5070726}
+  m_LocalPosition: {x: 0.014, y: 0.39, z: 0.519}
+  m_LocalScale: {x: 0.059575304, y: 0.05957532, z: 0.059575304}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 986398681071074056}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6364943288163881188
 GameObject:
   m_ObjectHideFlags: 0
@@ -5874,7 +5975,7 @@ Transform:
   m_GameObject: {fileID: 6364943288163881188}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.254, y: 0.901, z: 0}
+  m_LocalPosition: {x: 0.146, y: 0.907, z: 0.026}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6039,6 +6140,37 @@ Transform:
   m_Children:
   - {fileID: 1317734755504562308}
   m_Father: {fileID: 7923591578380457197}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8265239644236386446
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3246683321526773054}
+  m_Layer: 0
+  m_Name: CrystalSpw3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3246683321526773054
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8265239644236386446}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.86190337, z: 0, w: 0.5070726}
+  m_LocalPosition: {x: -0.75, y: 0.39, z: -0.581}
+  m_LocalScale: {x: 0.059575304, y: 0.05957532, z: 0.059575304}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 986398681071074056}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8354418603975465639
 GameObject:

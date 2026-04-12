@@ -82,9 +82,13 @@ public class UIManager : MonoBehaviour
     private bool _phaseBlinking;
     private Color _phaseOriginalColor;
 
-    // ─── 生命值随机化缓存 ─────────────────────────
-    private float _lastHealthValue = -1f;   // 上一次的后端当前生命值
-    private int _randomOffset = 0;           // 当前使用的随机偏移量 (0~49)
+    // ─── 玩家生命值随机化缓存 ─────────────────────
+    private float _lastPlayerHealthValue = -1f;   // 上一次的后端玩家当前生命值
+    private int _playerRandomOffset = 0;           // 当前使用的随机偏移量 (0~49)
+
+    // ─── Boss 生命值随机化缓存 ───────────────────
+    private float _lastBossHealthValue = -1f;      // 上一次的后端 Boss 当前生命值
+    private int _bossRandomOffset = 0;              // 当前使用的随机偏移量 (0~49)
 
     // ─────────────────────────────────────────────
     // 生命周期
@@ -174,23 +178,23 @@ public class UIManager : MonoBehaviour
         {
             uiCurrent = 0f;
             // 重置缓存，避免下次从中间状态开始时使用旧偏移
-            _lastHealthValue = -1f;
+            _lastPlayerHealthValue = -1f;
         }
         else if (rawCurrent >= rawMax - 0.001f) // 允许小误差
         {
             uiCurrent = uiMax;
-            _lastHealthValue = -1f;
+            _lastPlayerHealthValue = -1f;
         }
         else
         {
             // 后端生命值发生变化时，重新生成随机偏移量 (0~49)
-            if (!Mathf.Approximately(rawCurrent, _lastHealthValue))
+            if (!Mathf.Approximately(rawCurrent, _lastPlayerHealthValue))
             {
-                _randomOffset = Random.Range(0, 50);
-                _lastHealthValue = rawCurrent;
+                _playerRandomOffset = Random.Range(0, 50);
+                _lastPlayerHealthValue = rawCurrent;
             }
 
-            uiCurrent = rawCurrent * 50f - _randomOffset;
+            uiCurrent = rawCurrent * 50f - _playerRandomOffset;
 
             // 钳位到有效范围 [0, uiMax]
             uiCurrent = Mathf.Clamp(uiCurrent, 0f, uiMax);
@@ -291,7 +295,7 @@ public class UIManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────
-    // Boss
+    // Boss（生命值同样应用 50 倍 + 随机偏移）
     // ─────────────────────────────────────────────
 
     void UpdateBossUI()
@@ -312,15 +316,51 @@ public class UIManager : MonoBehaviour
         }
         if (_bossController == null) return;
 
-        float current = _bossController.GetCurrentHealth();
-        float max = _bossController.GetMaxHealth();
-        float ratio = max > 0f ? current / max : 0f;
+        float rawCurrent = _bossController.GetCurrentHealth();
+        float rawMax = _bossController.GetMaxHealth();
 
-        if (bossHealthBar != null) bossHealthBar.fillAmount = ratio;
+        // UI 最大生命值 = 后端最大生命值 × 50
+        float uiMax = rawMax * 50f;
+
+        float uiCurrent;
+
+        // 边界情况：后端生命值为 0 或满值，UI 直接对应 0 或满值
+        if (rawCurrent <= 0f)
+        {
+            uiCurrent = 0f;
+            _lastBossHealthValue = -1f;
+        }
+        else if (rawCurrent >= rawMax - 0.001f) // 允许小误差
+        {
+            uiCurrent = uiMax;
+            _lastBossHealthValue = -1f;
+        }
+        else
+        {
+            // 后端生命值发生变化时，重新生成随机偏移量 (0~15)
+            if (!Mathf.Approximately(rawCurrent, _lastBossHealthValue))
+            {
+                _bossRandomOffset = Random.Range(0, 16);
+                _lastBossHealthValue = rawCurrent;
+            }
+
+            uiCurrent = rawCurrent * 50f - _bossRandomOffset;
+            uiCurrent = Mathf.Clamp(uiCurrent, 0f, uiMax);
+        }
+
+        // 更新 Boss 进度条和文本（使用 UI 层的数值）
+        if (bossHealthBar != null)
+        {
+            float ratio = uiMax > 0f ? uiCurrent / uiMax : 0f;
+            bossHealthBar.fillAmount = ratio;
+        }
+
         if (bossHealthText != null)
-            bossHealthText.text = $"{Mathf.CeilToInt(current)} / {Mathf.CeilToInt(max)}";
+        {
+            bossHealthText.text = $"{Mathf.CeilToInt(uiCurrent)} / {Mathf.CeilToInt(uiMax)}";
+        }
 
-        // 阶段名称显示
+        // 阶段名称显示（这部分逻辑保持不变）
         int phase = _bossController.GetCurrentPhase();
         if (bossPhaseText != null)
         {
@@ -371,12 +411,12 @@ public class UIManager : MonoBehaviour
         GameObject beacon = gameFlowManager.GetActiveBeacon();
         if (beacon == null) return -1f;
 
-        // 优先使用 playerTransform，若为空则用主摄像机（VR 头显始终跟随玩家）
+        // 优先使用 主摄像机，若为空则用playerTransform（VR 头显始终跟随玩家）
         Vector3 pPos;
-        if (playerTransform != null)
-            pPos = playerTransform.position;
-        else if (Camera.main != null)
+        if (Camera.main != null)
             pPos = Camera.main.transform.position;
+        else if (playerTransform != null)
+            pPos = playerTransform.position;
         else
             return -1f;
 

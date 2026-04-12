@@ -21,7 +21,7 @@ public class Button3D : MonoBehaviour
 
     [Header("Cooldown")]
     [Tooltip("Cooldown in seconds between repeated triggers to prevent double-firing")]
-    [SerializeField] private float pressCooldown = 1f;
+    [SerializeField] private float pressCooldown = 0.3f;
 
     private Vector3 originalScale;
     private Coroutine activeAnimation;

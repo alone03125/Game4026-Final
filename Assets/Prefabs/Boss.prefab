@@ -517,7 +517,7 @@ MonoBehaviour:
   crystalPrefab: {fileID: 5407610080759841030, guid: b4fd28a26fdde5f4db3e8590f2f2a16c, type: 3}
   crystalSpawnPoints: []
   crystalSpawnRadius: 8
-  shieldDamageReduction: 0.493
+  shieldDamageReduction: 0.2
   bossGlowLight: {fileID: 0}
   shieldColor: {r: 0, g: 1, b: 1, a: 1}
   shieldFadeSpeed: 3

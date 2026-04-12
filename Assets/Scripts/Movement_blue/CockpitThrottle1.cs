@@ -18,9 +18,8 @@ public class CockpitThrottle : MonoBehaviour
     [SerializeField] bool flattenToHorizontal = true;
 
     [Header("Thrust ramp (噴射漸推)")]
-    [SerializeField] bool useThrustRamp = true;
-    [SerializeField] float timeToMaxSpeed = 0.35f;
-    [SerializeField] float timeToStop = 0.25f;
+    [SerializeField] float timeToMaxSpeed = 1.0f;
+    [SerializeField] float timeToStop = 0.5f;
 
     [Header("Input mode")]
     [SerializeField] bool usePositionBasedMovement = true;
@@ -183,27 +182,6 @@ public class CockpitThrottle : MonoBehaviour
                 ? AxisAnalogFromOffset(alongY, positionDeadzoneVerticalMeters, maxOffsetVerticalForFullSpeed)
                 : 0f;
 
-            // Only keep the axis with the largest |displacement|
-            float af = Mathf.Abs(alongF);
-            float ar = Mathf.Abs(alongR);
-            float ay = Mathf.Abs(alongY);
-
-            if (allowVerticalMovement && ay >= af && ay >= ar && ay > 0.0001f)
-            {
-                fx = 0f;
-                rx = 0f;
-            }
-            else if (af >= ar && af >= ay)
-            {
-                rx = 0f;
-                uy = 0f;
-            }
-            else
-            {
-                fx = 0f;
-                uy = 0f;
-            }
-
             moveDir = forward * fx + right * rx + Vector3.up * uy;
             if (moveDir.sqrMagnitude > 0.0001f)
                 moveDir.Normalize();
@@ -282,7 +260,6 @@ public class CockpitThrottle : MonoBehaviour
 
         float maxSpeed = constantSpeed * gMul;
         float targetSpeed = moveDir.sqrMagnitude > 0.0001f ? maxSpeed : 0f;
-        if (useThrustRamp)
         {
             float accelRate = maxSpeed / Mathf.Max(0.01f, timeToMaxSpeed);
             float decelRate = maxSpeed / Mathf.Max(0.01f, timeToStop);
@@ -290,10 +267,6 @@ public class CockpitThrottle : MonoBehaviour
                 _thrustSpeed = Mathf.MoveTowards(_thrustSpeed, targetSpeed, accelRate * dt);
             else
                 _thrustSpeed = Mathf.MoveTowards(_thrustSpeed, targetSpeed, decelRate * dt);
-        }
-        else
-        {
-            _thrustSpeed = targetSpeed;
         }
         Vector3 velocity = moveDir * _thrustSpeed;
         Vector3 step = velocity * dt;

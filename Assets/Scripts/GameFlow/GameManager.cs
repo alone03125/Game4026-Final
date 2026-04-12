@@ -15,6 +15,14 @@ public class GameManager : MonoBehaviour
     public int[] killsRequiredForNextStage = { 10, 15, 20 };
     public float[] spawnIntervalsPerStage = { 5f, 4f, 3f };
 
+    [Header("Boss 阶段敌人干扰")]
+    [Tooltip("Boss 阶段同时存在的最大敌人数")]
+    public int bossStageMaxEnemies = 5;
+    [Tooltip("Boss 阶段敌人生成间隔（秒）")]
+    public float bossStageSpawnInterval = 8f;
+    [Tooltip("Boss 阶段初始生成敌人数")]
+    public int bossStageInitialSpawn = 2;
+
     [Header("组件引用")]
     public EnemySpawner enemySpawner;             // 必须拖入场景中的 EnemySpawner
     

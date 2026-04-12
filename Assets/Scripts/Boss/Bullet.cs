@@ -54,6 +54,8 @@ public class Bullet1 : MonoBehaviour
 
         if (other.CompareTag("Boss")
          || other.CompareTag("BossBullet")
+         || other.CompareTag("EnemyBullet")
+         || other.CompareTag("Enemy")
          || other.CompareTag("Crystal"))
             return;
 
