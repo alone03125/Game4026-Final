@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4911711463818668743}
   - component: {fileID: 7403403525986457087}
   m_Layer: 0
-  m_Name: Global Volume
+  m_Name: Cam_filter_chh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
