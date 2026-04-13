@@ -268,13 +268,13 @@ MonoBehaviour:
     m_Value: 1
   threshold:
     m_OverrideState: 1
-    m_Value: 0.55
+    m_Value: 0.38
   intensity:
     m_OverrideState: 1
-    m_Value: 6.29
+    m_Value: 1.52
   scatter:
     m_OverrideState: 1
-    m_Value: 0.543
+    m_Value: 0.688
   clamp:
     m_OverrideState: 1
     m_Value: 64158
@@ -352,8 +352,8 @@ MonoBehaviour:
           inWeight: 0
           outWeight: 0
         - serializedVersion: 3
-          time: 0.028455285
-          value: 0.038997233
+          time: 0.025730994
+          value: 0.047961652
           inSlope: 1.0413508
           outSlope: 1.0413508
           tangentMode: 0
@@ -361,8 +361,8 @@ MonoBehaviour:
           inWeight: 0
           outWeight: 0
         - serializedVersion: 3
-          time: 0.096205965
-          value: 0.09749305
+          time: 0.10643275
+          value: 0.1582734
           inSlope: 0.90423787
           outSlope: 0.90423787
           tangentMode: 0
@@ -370,8 +370,8 @@ MonoBehaviour:
           inWeight: 0
           outWeight: 0
         - serializedVersion: 3
-          time: 0.2425665
-          value: 0.2266016
+          time: 0.21052632
+          value: 0.3932854
           inSlope: 0.5858318
           outSlope: 0.5858318
           tangentMode: 0
@@ -398,8 +398,8 @@ MonoBehaviour:
           outWeight: 0
         - serializedVersion: 3
           time: 1
-          value: 1
-          inSlope: 1
+          value: 0.8465228
+          inSlope: 4.011573
           outSlope: 0
           tangentMode: 0
           weightedMode: 0
