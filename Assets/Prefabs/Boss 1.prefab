@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8828733161293217195}
   - component: {fileID: 538975998891970241}
   - component: {fileID: 7568962122421934301}
+  - component: {fileID: 5401715016721886219}
   m_Layer: 0
   m_Name: Boss 1
   m_TagString: Boss
@@ -107,8 +108,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.56065065, y: 0.82148594, z: 0.5623108}
-  m_Center: {x: -0.012452426, y: 0.4087718, z: 0.06449429}
+  m_Size: {x: 0.58330977, y: 0.82148594, z: 0.5623108}
+  m_Center: {x: -0.0011230713, y: 0.4087718, z: 0.06449429}
 --- !u!114 &538975998891970241
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -133,6 +134,7 @@ MonoBehaviour:
   firePoint: {fileID: 0}
   bullet1Speed: 15
   phase1FireRate: 0.4
+  phase1FireDelay: 0.5
   phase1Bullet1Damage: 2
   immunityDuration: 5
   crystalPrefab: {fileID: 5407610080759841030, guid: b4fd28a26fdde5f4db3e8590f2f2a16c, type: 3}
@@ -147,6 +149,7 @@ MonoBehaviour:
   shieldColor: {r: 0, g: 1, b: 1, a: 1}
   shieldFadeSpeed: 3
   phase3FireRate: 1
+  phase2FireDelay: 0.3
   phase3Bullet1Damage: 5
   berserkParticleEffect: {fileID: 4452161037852782641}
   doubleDamageTimeLimit: 300
@@ -173,6 +176,27 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!65 &5401715016721886219
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 282439148828463214}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.63673323, y: 0.88587457, z: 0.6406494}
+  m_Center: {x: 0.0066651907, y: 0.3956308, z: 0.07137964}
 --- !u!1 &336009309278063005
 GameObject:
   m_ObjectHideFlags: 0

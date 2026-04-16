@@ -52,8 +52,12 @@ public class Enemy : MonoBehaviour
 
     [Header("预警 —— 蓄力音效")]
     public AudioClip chargeSound;                 // 蓄力音效（开始预警时播放）
-    public AudioClip shootSound;                  // 开枪音效（可不赋値）
+    public AudioClip shootSound;                  // 开枪音效（可不赋值）
     [Range(0f, 1f)] public float chargeSoundVolume = 0.8f;
+
+    [Header("接触伤害")]
+    [Tooltip("与 PlayerBody 碰撞时对玩家造成的伤害值，可在 Inspector 或外部代码中调整")]
+    public float contactDamage = 10f;
 
     [Header("死亡爆炸特效")]
     [Tooltip("死亡时实例化的爆炸粒子特效预制体，留空则用代码生成")]
@@ -524,6 +528,27 @@ public class Enemy : MonoBehaviour
             ps.Play();
             Destroy(fxObj, ps.main.duration + ps.main.startLifetime.constantMax);
         }
+    }
+
+    void HandlePlayerBodyContact(GameObject other)
+    {
+        PlayerHealth ph = other.GetComponentInParent<PlayerHealth>();
+        if (ph == null) ph = other.GetComponent<PlayerHealth>();
+        if (ph != null)
+            ph.TakeDamage(contactDamage);
+        Die();
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("PlayerBody"))
+            HandlePlayerBodyContact(other.gameObject);
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.collider.CompareTag("PlayerBody"))
+            HandlePlayerBodyContact(collision.collider.gameObject);
     }
 
     public void SetSpawner(EnemySpawner sp)

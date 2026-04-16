@@ -22,18 +22,30 @@ public class RTShoot : MonoBehaviour
     private float shootTimer;
     private float barrelHeat;     // 当前枪管热量值
     private bool isOverheated;
+    private PlayerHealth _playerHealth;
+
+    [Header("Haptic Feedback")]
+    [SerializeField] private float hapticAmplitude = 0.4f;
+    [SerializeField] private float hapticDuration  = 0.05f;
 
     void Start()
     {   
         TryGetRightHandDevice();
+        _playerHealth = FindObjectOfType<PlayerHealth>();
     }
 
     void Update()
     {
-    Debug.Log("rightHandDevice.isValid: " + rightHandDevice.isValid);
-
     if (!rightHandDevice.isValid)
         TryGetRightHandDevice();
+
+    // 玩家死亡时禁止所有射击逻辑
+    if (_playerHealth != null && _playerHealth.IsDead())
+    {
+        isTrigger = false;
+        shootTimer = 0f;
+        return;
+    }
 
     bool triggerPressed = false;
     rightHandDevice.TryGetFeatureValue(CommonUsages.triggerButton, out triggerPressed);
@@ -103,8 +115,12 @@ public class RTShoot : MonoBehaviour
             rb.velocity = bulletOrigin.forward * bulletSpeed;
         }
 
-        // 射击震动
+        // 射击震动（屏幕）
         CockpitShake.TriggerShoot();
+
+        // 右手柄震动反馈
+        if (rightHandDevice.isValid)
+            rightHandDevice.SendHapticImpulse(0, hapticAmplitude, hapticDuration);
 
         // 每发子弹增加热量
         barrelHeat += heatPerBullet;

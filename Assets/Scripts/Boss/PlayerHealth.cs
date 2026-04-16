@@ -30,7 +30,11 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private float fallAngle    = 90f;
     [SerializeField] private float fallDuration = 0.5f;
     [SerializeField] private Vector3 fallAxis   = Vector3.right;
-    [SerializeField] private MonoBehaviour[] disableOnDeath; // 死亡时禁用的组件（如驾驶、射击等）
+
+    // 死亡时需要禁用的组件，运行时自动查找，无需 Inspector 配置
+    private CockpitThrottle  _throttle;
+    private CockpitSimpleTurn _turn;
+    private RTShoot           _rtShoot;
 
     private bool      isDead = false;
     private Quaternion _aliveRotation;
@@ -43,6 +47,11 @@ public class PlayerHealth : MonoBehaviour
         UpdateUI();
 
         if (deathPanel != null) deathPanel.SetActive(false);
+
+        // 自动查找需要禁用的组件
+        _throttle = FindObjectOfType<CockpitThrottle>();
+        _turn     = FindObjectOfType<CockpitSimpleTurn>();
+        _rtShoot  = FindObjectOfType<RTShoot>();
     }
 
     void Update()
@@ -110,11 +119,14 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = Mathf.Clamp(maxHealth * healthFraction, 1f, maxHealth);
         isDead = false;
 
+        // 恢复所有按钮序列功能
+        SequenceManager.SetPlayerDead(false);
+
         UpdateUI();
         if (deathPanel != null) deathPanel.SetActive(false);
 
-        foreach (var comp in disableOnDeath)
-            if (comp != null) comp.enabled = true;
+        // 恢复移动 / 视角旋转 / 射击
+        SetMovementEnabled(true);
 
         if (_poseRoutine != null) StopCoroutine(_poseRoutine);
         _poseRoutine = StartCoroutine(RotateToRoutine(_aliveRotation));
@@ -130,16 +142,25 @@ public class PlayerHealth : MonoBehaviour
         UpdateUI();
     }
 
+    private void SetMovementEnabled(bool enabled)
+    {
+        if (_throttle != null) _throttle.enabled = enabled;
+        if (_turn     != null) _turn.enabled     = enabled;
+        if (_rtShoot  != null) _rtShoot.enabled  = enabled;
+    }
+
     private void Die()
     {
         if (isDead) return;
         isDead = true;
 
+        // 屏蔽除复活以外的所有按钮序列
+        SequenceManager.SetPlayerDead(true);
+
         Debug.Log("[Player] 玩家死亡！");
 
-        // 禁用指定组件
-        foreach (var comp in disableOnDeath)
-            if (comp != null) comp.enabled = false;
+        // 禁用移动 / 视角旋转 / 射击
+        SetMovementEnabled(false);
 
         // 显示死亡 UI
         if (deathPanel != null) deathPanel.SetActive(true);
@@ -155,12 +176,15 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = maxHealth;
         isDead        = false;
 
+        // 恢复所有按钮序列功能
+        SequenceManager.SetPlayerDead(false);
+
         UpdateUI();
 
         if (deathPanel != null) deathPanel.SetActive(false);
 
-        foreach (var comp in disableOnDeath)
-            if (comp != null) comp.enabled = true;
+        // 恢复移动 / 视角旋转 / 射击
+        SetMovementEnabled(true);
 
         if (_poseRoutine != null) StopCoroutine(_poseRoutine);
         _poseRoutine = StartCoroutine(RotateToRoutine(_aliveRotation));

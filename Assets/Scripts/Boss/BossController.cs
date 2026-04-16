@@ -66,8 +66,10 @@ public class BossController : MonoBehaviour
     public float bullet1Speed = 15f;
 
     [Header("=== 第一阶段 —— 普通射击 ===")]
-    [Tooltip("每秒发射子弹数")]
+    [Tooltip("每秒发射子弹数（子弹生成频率）")]
     public float phase1FireRate = 2f;
+    [Tooltip("Attack01 动画前摇延迟（秒）：从动画开始到子弹实际发射的等待时间")]
+    public float phase1FireDelay = 0.5f;
     [Tooltip("子弹伤害值")]
     public float phase1Bullet1Damage = 1f;
 
@@ -91,8 +93,10 @@ public class BossController : MonoBehaviour
     public float shieldFadeSpeed = 3f;
 
     [Header("=== 第三阶段 —— 狂暴 ===")]
-    [Tooltip("狂暴状态每秒发射子弹数")]
+    [Tooltip("狂暴状态每秒发射子弹数（子弹生成频率）")]
     public float phase3FireRate = 5f;
+    [Tooltip("Attack02 动画前摇延迟（秒）：第二/三阶段从动画开始到子弹实际发射的等待时间")]
+    public float phase2FireDelay = 0.3f;
     [Tooltip("狂暴状态子弹伤害值")]
     public float phase3Bullet1Damage = 2f;
     [Tooltip("狂暴时的粒子效果（需预先设置好红色粒子系统）")]
@@ -259,6 +263,7 @@ public class BossController : MonoBehaviour
 
     void HandleFacePlayer()
     {
+        if (isDead) return;
         if (playerTransform == null) return;
 
         Vector3 dir = playerTransform.position - transform.position;
@@ -304,9 +309,12 @@ public class BossController : MonoBehaviour
         PlayAnim(attackAnim);
         // 等待一帧让 Animator 进入新状态
         yield return null;
-        // 获取攻击动画长度，前摇为动画长度的一半
+        // 获取攻击动画长度（用于动画播完后回 Idle）
         AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
-        yield return new WaitForSeconds(info.length * 0.5f);
+
+        // 根据阶段使用对应的前摇延迟
+        float windUpDelay = (currentPhase >= 2) ? phase2FireDelay : phase1FireDelay;
+        yield return new WaitForSeconds(windUpDelay);
 
         // 前摇结束，发射子弹
         if (isDead || playerTransform == null) yield break;
@@ -319,7 +327,8 @@ public class BossController : MonoBehaviour
         SpawnBullet(spawnPos, dir);
 
         // 等待剩余动画播完后回到 Idle
-        yield return new WaitForSeconds(info.length * 0.5f);
+        float remainingDelay = Mathf.Max(0f, info.length - windUpDelay);
+        yield return new WaitForSeconds(remainingDelay);
         if (!isDead)
             PlayAnim(ANIM_IDLE);
     }
@@ -605,7 +614,7 @@ public class BossController : MonoBehaviour
     IEnumerator DeathDelayRoutine()
     {
         // 等待死亡动画播放完毕（约 2 秒，可根据 Death.fbx 时长调整）
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(4f);
         gameObject.SetActive(false);
     }
 

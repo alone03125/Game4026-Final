@@ -25,6 +25,10 @@ public class SequenceManager : MonoBehaviour
     private RTShoot rtShoot;
     private PlayerHealth playerHealth;
 
+    // 玩家死亡标记：死亡时屏蔽复活以外的所有序列
+    private bool _playerDead = false;
+    private const string REVIVE_PATTERN = "ABBBBCD";
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -176,6 +180,8 @@ public class SequenceManager : MonoBehaviour
                 // ִ��Ч���ص�
                 if (patterns.TryGetValue(pat, out Action action))
                 {
+                    // 玩家死亡时，只允许执行复活序列
+                    if (_playerDead && pat != REVIVE_PATTERN) continue;
                     action?.Invoke();
                 }
                 // ������󴥷�����Ϊ���ָ�ģʽ���������������������д�����ͳһ���£�
@@ -187,6 +193,15 @@ public class SequenceManager : MonoBehaviour
         {
             lastTriggerEndIndex[kvp.Key] = kvp.Value;
         }
+    }
+
+    /// <summary>
+    /// 设置玩家死亡状态。死亡时除复活序列（ABBBBCD）外所有序列均被屏蔽。
+    /// 由 PlayerHealth 在死亡/复活时调用。
+    /// </summary>
+    public static void SetPlayerDead(bool dead)
+    {
+        if (Instance != null) Instance._playerDead = dead;
     }
 
     // ��ѡ���ṩ������еķ������������û���ԣ�

@@ -175,17 +175,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: Boss 1
       objectReference: {fileID: 0}
+    - target: {fileID: 282439148828463214, guid: 99026df44b301624984e9dcce3f6b583, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 538975998891970241, guid: 99026df44b301624984e9dcce3f6b583, type: 3}
       propertyPath: maxHealth
-      value: 60
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 538975998891970241, guid: 99026df44b301624984e9dcce3f6b583, type: 3}
       propertyPath: phase2HealthThreshold
-      value: 40
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 538975998891970241, guid: 99026df44b301624984e9dcce3f6b583, type: 3}
       propertyPath: phase3HealthThreshold
-      value: 20
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 986398681071074056, guid: 99026df44b301624984e9dcce3f6b583, type: 3}
       propertyPath: m_LocalPosition.x
@@ -618,6 +622,11 @@ Camera:
   m_CorrespondingSourceObject: {fileID: 2550115465914379563, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
   m_PrefabInstance: {fileID: 6770636272314090108}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &1916877845 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2550115465914379566, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+  m_PrefabInstance: {fileID: 6770636272314090108}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2045401538
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -938,9 +947,49 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2364969931612313204, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: cameraRig
+      value: 
+      objectReference: {fileID: 1916877845}
+    - target: {fileID: 2364969931612313204, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: cameraOffset
+      value: 
+      objectReference: {fileID: 1916877845}
+    - target: {fileID: 2364969931612313204, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: mechWalk.stepRate
+      value: 0.81
+      objectReference: {fileID: 0}
+    - target: {fileID: 2364969931612313204, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: mechWalk.fadeOutTime
+      value: 0.18
+      objectReference: {fileID: 0}
+    - target: {fileID: 2364969931612313204, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: mechWalk.impactDecay
+      value: 2.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2364969931612313204, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: mechWalk.impactAmplitude
+      value: 0.06
+      objectReference: {fileID: 0}
+    - target: {fileID: 2364969931612313204, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: mechWalk.lateralAmplitude
+      value: 0.02
+      objectReference: {fileID: 0}
+    - target: {fileID: 2364969931612313204, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: mechWalk.verticalAmplitude
+      value: -0.05
+      objectReference: {fileID: 0}
     - target: {fileID: 4252596331837483958, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: m_Name
       value: (Player)Complete XR Origin Set Up
+      objectReference: {fileID: 0}
+    - target: {fileID: 6165905100251276164, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: maxHealth
+      value: 140
+      objectReference: {fileID: 0}
+    - target: {fileID: 6165905100251276164, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: shieldCount
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 7429715337549824552, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: m_LocalPosition.x
@@ -981,6 +1030,22 @@ PrefabInstance:
     - target: {fileID: 7429715337549824552, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9075777470048311373, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: heatPerBullet
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 9075777470048311373, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: normalCoolRate
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 9075777470048311373, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: overheatCoolRate
+      value: 18
+      objectReference: {fileID: 0}
+    - target: {fileID: 9075777470048311373, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: overheatThreshold
+      value: 120
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
