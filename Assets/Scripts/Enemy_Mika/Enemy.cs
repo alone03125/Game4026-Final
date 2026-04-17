@@ -60,12 +60,8 @@ public class Enemy : MonoBehaviour
     public float contactDamage = 10f;
 
     [Header("死亡爆炸特效")]
-    [Tooltip("死亡时实例化的爆炸特效预制体（GameObject 类型，挂载 ParticleSystem 即可），留空则用代码生成")]
-    public GameObject explosionPrefab;
-
-    [Header("攻击特效")]
-    [Tooltip("发射子弹时在敌人位置播放的攻击特效预制体（VFX_EnemyAtk），留空则跳过")]
-    public GameObject attackVFXPrefab;
+    [Tooltip("死亡时实例化的爆炸粒子特效预制体，留空则用代码生成")]
+    public ParticleSystem explosionPrefab;
 
     private Transform player;
     private Vector3 velocity;                  // 当前速度向量
@@ -297,27 +293,18 @@ public class Enemy : MonoBehaviour
             // ── 3. 等待蓄力时间结束 ──
             yield return new WaitForSeconds(chargeDuration);
 
-            // ── 4. 发射子弹 + 攻击特效 ──
+            // ── 4. 发射子弹 ──
             if (shootSound != null)
                 AudioSource.PlayClipAtPoint(shootSound, transform.position, chargeSoundVolume);
 
-            if (player != null)
+            if (enemyBulletPrefab != null && player != null)
             {
                 Vector3 direction = (player.position - transform.position).normalized;
-
-                // 攻击特效：独立于子弹，始终触发
-                Debug.Log($"[Enemy] attackVFXPrefab={(attackVFXPrefab == null ? "NULL" : attackVFXPrefab.name)}, explosionPrefab={(explosionPrefab == null ? "NULL" : explosionPrefab.name)}");
-                if (attackVFXPrefab != null)
-                    SpawnVFX(attackVFXPrefab, transform.position, Quaternion.LookRotation(direction));
-
-                if (enemyBulletPrefab != null)
-                {
-                    GameObject bullet = Instantiate(enemyBulletPrefab, transform.position, Quaternion.LookRotation(direction));
-                    bullet.tag = "EnemyBullet";
-                    EnemyBullet bulletScript = bullet.GetComponent<EnemyBullet>();
-                    if (bulletScript != null)
-                        bulletScript.speed = bulletSpeed;
-                }
+                GameObject bullet = Instantiate(enemyBulletPrefab, transform.position, Quaternion.LookRotation(direction));
+                bullet.tag = "EnemyBullet";
+                EnemyBullet bulletScript = bullet.GetComponent<EnemyBullet>();
+                if (bulletScript != null)
+                    bulletScript.speed = bulletSpeed;
             }
 
             // ── 5. 清理所有预警特效 ──
@@ -481,7 +468,10 @@ public class Enemy : MonoBehaviour
 
         if (explosionPrefab != null)
         {
-            SpawnVFX(explosionPrefab, pos, Quaternion.identity);
+            // 使用粒子特效预制体
+            ParticleSystem fx = Instantiate(explosionPrefab, pos, Quaternion.identity);
+            fx.Play();
+            Destroy(fx.gameObject, fx.main.duration + fx.main.startLifetime.constantMax);
         }
         else
         {
@@ -537,52 +527,6 @@ public class Enemy : MonoBehaviour
 
             ps.Play();
             Destroy(fxObj, ps.main.duration + ps.main.startLifetime.constantMax);
-        }
-    }
-
-    /// <summary>
-    /// 实例化 VFX 预制体，播放其层级内所有 ParticleSystem，并在播放完毕后自动销毁。
-    /// </summary>
-    static void SpawnVFX(GameObject prefab, Vector3 pos, Quaternion rot)
-    {
-        if (prefab == null)
-        {
-            Debug.LogWarning("[SpawnVFX] prefab is null, skipping.");
-            return;
-        }
-
-        GameObject fx = Instantiate(prefab, pos, rot);
-        Debug.Log($"[SpawnVFX] Instantiated '{prefab.name}' at {pos}");
-
-        // 获取层级内全部 ParticleSystem（含非激活子物体）
-        ParticleSystem[] allPs = fx.GetComponentsInChildren<ParticleSystem>(true);
-        Debug.Log($"[SpawnVFX] Found {allPs.Length} ParticleSystem(s) in '{prefab.name}'");
-
-        if (allPs.Length > 0)
-        {
-            float maxDuration = 2f; // 保底销毁时间
-            foreach (ParticleSystem p in allPs)
-            {
-                p.gameObject.SetActive(true);
-                p.Play(true); // withChildren=true，一并播放其下级 PS
-                Debug.Log($"[SpawnVFX]   Playing PS '{p.gameObject.name}', isPlaying={p.isPlaying}");
-
-                // 计算持续时长：兼容 Constant / TwoConstants / Curve 三种模式
-                var lt = p.main.startLifetime;
-                float lifetime = lt.mode == ParticleSystemCurveMode.Constant
-                    ? lt.constant
-                    : Mathf.Max(lt.constantMin, lt.constantMax);
-                float totalDur = p.main.duration + lifetime;
-                if (totalDur > maxDuration) maxDuration = totalDur;
-            }
-            Debug.Log($"[SpawnVFX] Will destroy '{prefab.name}' in {maxDuration + 0.5f:F2}s");
-            Destroy(fx, maxDuration + 0.5f); // 额外 0.5s 余量
-        }
-        else
-        {
-            // 无粒子系统（如 VFX Graph 等），5 秒后销毁
-            Debug.LogWarning($"[SpawnVFX] No ParticleSystem found in '{prefab.name}'. Destroying in 5s.");
-            Destroy(fx, 5f);
         }
     }
 
