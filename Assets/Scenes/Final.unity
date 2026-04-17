@@ -828,12 +828,20 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1022800932690199264, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: rotationDeadzoneDeg
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1022800932690199264, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: yawDegreesPerSecond
-      value: 15
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 1022800932690199264, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: pitchDegreesPerSecond
-      value: 7.5
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1022800932690199264, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: maxRotationForFullSpeedDeg
+      value: 35
       objectReference: {fileID: 0}
     - target: {fileID: 2364969931612313204, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: cameraRig
