@@ -241,7 +241,7 @@ MonoBehaviour:
   gravitySensitivity: 1
   randomMoveWeight: 0.5
   directionChangeInterval: 0.5
-  maxSpeed: 15
+  maxSpeed: 10
   acceleration: 3
   steeringForce: 2
   verticalMovementScale: 0.8
@@ -264,6 +264,7 @@ MonoBehaviour:
   chargeSound: {fileID: 8300000, guid: b319a2e4ff8f5d840b82d8635b645d22, type: 3}
   shootSound: {fileID: 8300000, guid: 16fba6d30ed741d4a9fdd6e79ee2f3ac, type: 3}
   chargeSoundVolume: 0.604
+  contactDamage: 10
   explosionPrefab: {fileID: 7524137777388449901, guid: 87324f1a80630ea41971e07b7f8103bc, type: 3}
 --- !u!1 &8733440291440134055
 GameObject:

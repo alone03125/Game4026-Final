@@ -19,7 +19,7 @@ public class SequenceManager : MonoBehaviour
     private Dictionary<string, int> lastTriggerEndIndex = new Dictionary<string, int>();
 
     // ��ѡ����������󳤶ȣ���ֹ��������������ʵ������������˴���Ϊ100�㹻���Ǹ������У�
-    private const int MAX_BUFFER_LENGTH = 100;
+    private const int MAX_BUFFER_LENGTH = 1000;
 
     // 缓存场景中的目标组件引用
     private RTShoot rtShoot;
@@ -111,7 +111,8 @@ public class SequenceManager : MonoBehaviour
 
             // ��Ҫ�������Ƴ���ǰ׺������ģʽ����󴥷�������Ҫͬ����ȥƫ��������������ʧЧ��
             // ��ʵ�֣��������д�����¼�������Ѵ�����ģʽ��ʣ������������ƥ�䣨����Ԥ�ڣ���Ϊ��ǰ׺�Ѷ�����
-            foreach (var key in lastTriggerEndIndex.Keys)
+            var keys = new List<string>(lastTriggerEndIndex.Keys);
+            foreach (var key in keys)
             {
                 lastTriggerEndIndex[key] = -1;
             }
