@@ -7942,8 +7942,6 @@ MonoBehaviour:
   overheatThreshold: 200
   normalCoolRate: 50
   overheatCoolRate: 25
-  hapticAmplitude: 0.4
-  hapticDuration: 0.05
 --- !u!65 &1399208379404847166
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8016,14 +8014,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa2af28cf7469564c92490cefd5fa315, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cockpitBody: {fileID: 0}
-  mechWalk:
-    stepRate: 0.6
-    verticalAmplitude: -0.025
-    lateralAmplitude: 0.01
-    impactAmplitude: 0.03
-    impactDecay: 2.1
-    fadeOutTime: 0.18
+  walkShake:
+    amplitude: 0.04
+    frequency: 0.4
+    duration: 0.3
   shootShake:
     amplitude: 0.015
     frequency: 25
@@ -9943,6 +9937,7 @@ MonoBehaviour:
   fallAngle: 90
   fallDuration: 1
   fallAxis: {x: 0, y: 0, z: -1}
+  disableOnDeath: []
 --- !u!114 &3441937399799204085
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9955,14 +9950,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa2af28cf7469564c92490cefd5fa315, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cockpitBody: {fileID: 0}
-  mechWalk:
-    stepRate: 0.6
-    verticalAmplitude: -0.025
-    lateralAmplitude: 0.01
-    impactAmplitude: 0.03
-    impactDecay: 2.1
-    fadeOutTime: 0.18
+  walkShake:
+    amplitude: 0.04
+    frequency: 0.5
+    duration: 0.3
   shootShake:
     amplitude: 0.025
     frequency: 25

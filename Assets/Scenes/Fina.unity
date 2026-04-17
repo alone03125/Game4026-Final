@@ -1226,15 +1226,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stages:
-  - horizontalRange: 20
-    upperOffset: 10
-    lowerOffset: 5
-  - horizontalRange: 20
-    upperOffset: 10
-    lowerOffset: 5
-  - horizontalRange: 20
-    upperOffset: 10
-    lowerOffset: 5
+  - min: {x: -20, y: -20, z: -20}
+    max: {x: 20, y: 20, z: 20}
+  - min: {x: -30, y: -30, z: -30}
+    max: {x: 30, y: 30, z: 30}
+  - min: {x: -40, y: -40, z: -40}
+    max: {x: 40, y: 40, z: 40}
   enemyPool: {fileID: 2008565255}
   spawnInterval: 0
   maxEnemyCount: 15
@@ -1813,12 +1810,8 @@ MonoBehaviour:
   bulletPrefab: {fileID: 7150022249518444547, guid: c7dbca94e48fca749adf6fb4c7ac80f2, type: 3}
   fireInterval: 0.15
   bulletSpeed: 25
-  heatPerBullet: 3
-  overheatThreshold: 300
-  normalCoolRate: 100
-  overheatCoolRate: 60
-  hapticAmplitude: 0.4
-  hapticDuration: 0.05
+  overheatHoldSeconds: 5
+  cooldownSeconds: 2
 --- !u!1001 &547918466
 PrefabInstance:
   m_ObjectHideFlags: 0
