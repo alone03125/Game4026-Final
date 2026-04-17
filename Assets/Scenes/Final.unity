@@ -841,7 +841,7 @@ PrefabInstance:
       objectReference: {fileID: 1916877845}
     - target: {fileID: 2364969931612313204, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2364969931612313204, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: cameraOffset
@@ -882,6 +882,10 @@ PrefabInstance:
     - target: {fileID: 3119089721122505516, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3441937399799204085, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3441937399799204085, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: mechWalk.stepRate

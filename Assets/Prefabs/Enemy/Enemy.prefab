@@ -265,7 +265,8 @@ MonoBehaviour:
   shootSound: {fileID: 8300000, guid: 16fba6d30ed741d4a9fdd6e79ee2f3ac, type: 3}
   chargeSoundVolume: 0.604
   contactDamage: 10
-  explosionPrefab: {fileID: 7524137777388449901, guid: 87324f1a80630ea41971e07b7f8103bc, type: 3}
+  explosionPrefab: {fileID: 1896930659484292666, guid: f381b7da190f4e54aa46c7d0b4956d00, type: 3}
+  attackVFXPrefab: {fileID: 797838524757214561, guid: c79b10eda18829340a59845f3950a3cb, type: 3}
 --- !u!1 &8733440291440134055
 GameObject:
   m_ObjectHideFlags: 0

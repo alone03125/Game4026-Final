@@ -2,14 +2,20 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// VR 镜头震动系统，支持多种震动事件叠加。
+/// VR 座舱震动系统，支持多种震动事件叠加。
 /// 挂载在 Camera Offset（XR Origin 下的子物体）上。
-/// XR Tracking 控制 Main Camera 的 localPosition，
-/// 而本脚本修改 Camera Offset 的 localPosition，两者叠加实现镜头抖动。
+/// 震动偏移同时施加于 cockpitBody（机甲座舱模型根节点）和 Camera Offset，
+/// 让座舱与镜头同步晃动，消除"镜头抖但座舱不动"导致的 VR 晕眩感。
+/// 若未指定 cockpitBody，则仅抖动 Camera Offset（向下兼容）。
 /// </summary>
 public class CockpitShake : MonoBehaviour
 {
     public static CockpitShake Instance { get; private set; }
+
+    [Header("抖动目标")]
+    [Tooltip("机甲座舱/机体根节点。抖动会同步施加于此 Transform，使座舱与镜头一起晃动。\n" +
+             "若留空则仅抖动 Camera Offset（旧行为，容易晕）。")]
+    [SerializeField] Transform cockpitBody;
 
     [System.Serializable]
     public class ShakeProfile
@@ -26,13 +32,13 @@ public class CockpitShake : MonoBehaviour
     public class MechWalkSettings
     {
         [Tooltip("步频（步/秒），可通过 CockpitShake.SetStepRate() 或 Inspector 调整")]
-        public float stepRate = 0.7f;
+        public float stepRate = 0.6f;
         [Tooltip("垂直起伏幅度（米）。推荐值：轻型机甲 0.035 / 重型机甲 0.06")]
-        public float verticalAmplitude = -0.02f;
+        public float verticalAmplitude = -0.025f;
         [Tooltip("左右摇摆幅度（米）。推荐值：轻型机甲 0.02 / 重型机甲 0.04")]
-        public float lateralAmplitude = 0.05f;
+        public float lateralAmplitude = 0.01f;
         [Tooltip("踏步触地下沉幅度（米）。推荐值：轻型机甲 0.04 / 重型机甲 0.08")]
-        public float impactAmplitude = 0.06f;
+        public float impactAmplitude = 0.03f;
         [Tooltip("踏步冲击衰减速度（越大消散越快）")]
         public float impactDecay = 2.1f;
         [Tooltip("停止行走后效果淡出时间（秒）")]
@@ -66,6 +72,7 @@ public class CockpitShake : MonoBehaviour
 
     // 上一帧施加的偏移量，用于在下一帧开头撤销，确保震动结束后回归原位
     private Vector3 _lastAppliedOffset = Vector3.zero;
+    private Vector3 _lastAppliedCockpitOffset = Vector3.zero;
 
     // ── 机甲行走状态 ──
     private float _walkPhase    = 0f;   // 行走相位累积
@@ -102,6 +109,8 @@ public class CockpitShake : MonoBehaviour
     {
         // 先撤销上一帧施加的偏移，让 localPosition 回到 XR 追踪的真实值
         transform.localPosition -= _lastAppliedOffset;
+        if (cockpitBody != null)
+            cockpitBody.localPosition -= _lastAppliedCockpitOffset;
 
         Vector3 totalOffset = Vector3.zero;
 
@@ -164,6 +173,17 @@ public class CockpitShake : MonoBehaviour
         // 施加本帧偏移并记录，下一帧开头会撤销
         transform.localPosition += totalOffset;
         _lastAppliedOffset = totalOffset;
+
+        // 同步抖动座舱机体，消除镜头与座舱不同步导致的晕眩
+        if (cockpitBody != null)
+        {
+            cockpitBody.localPosition += totalOffset;
+            _lastAppliedCockpitOffset = totalOffset;
+        }
+        else
+        {
+            _lastAppliedCockpitOffset = Vector3.zero;
+        }
     }
 
     // ─── 公开接口 ───────────────────────────────────
