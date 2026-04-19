@@ -1,8 +1,11 @@
+using System;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 
 [RequireComponent(typeof(XRSimpleInteractable))]
 public class CockpitSimpleTurn : MonoBehaviour{
+    /// <summary>玩家首次产生有效转向输入时触发一次（供教程使用）。</summary>
+    public static event Action OnTurnInputDetected;
     [Header("References")]
     [SerializeField] XRSimpleInteractable leverInteractable;
     [SerializeField] Transform xrOrigin;
@@ -19,17 +22,16 @@ public class CockpitSimpleTurn : MonoBehaviour{
     // // true: Keeps spinning as long as hand remains on the side (depending on position)
     // [SerializeField] bool usePositionBasedTurn = true;
 
-    [Header("Pitch (俯仰)")]
+    [Header("Pitch (俯仰) — 由手柄前后位移控制")]
     [SerializeField] float pitchDegreesPerSecond = 60f;
     [Tooltip("低头最大角度（正值，实际为负方向）")]
     [SerializeField] float maxPitchDown = 15f;
     [Tooltip("抬头最大角度")]
     [SerializeField] float maxPitchUp = 35f;
-
-    // [Header("Velocity")]
-    // [SerializeField] float handSpeedDeadzoneLR = 0.05f;
-    // [SerializeField] float stillDeltaMeters = 0.0015f;
-    // [SerializeField] float stillStopTime = 0.06f;
+    [Tooltip("俯仰位移死区（米）")]
+    [SerializeField] float pitchPositionDeadzoneMeters = 0.02f;
+    [Tooltip("达到最大俯仰速度的位移距离（米）")]
+    [SerializeField] float pitchMaxOffsetForFullSpeed = 0.12f;
 
     [Header("Rotation")]
     [SerializeField] float rotationDeadzoneDeg = 4f;
@@ -55,9 +57,7 @@ public class CockpitSimpleTurn : MonoBehaviour{
     IXRSelectInteractor _activeInteractor;
     bool _isControlling;
     bool _hasPrevHandLocal;
-    // Vector3 _prevHandLocal;
-    // Vector3 _grabNeutralLocal;
-    // float _stillTimer;
+    Vector3 _grabNeutralLocal;   // 抓取时手柄的本地空间位置（用于俯仰位移）
     float _currentPitch;
     // Rotation variables
     Quaternion _prevHandLocalRot;
@@ -113,9 +113,8 @@ public class CockpitSimpleTurn : MonoBehaviour{
             return;
         }
 
-        // Vector3 handNow = GetInteractorWorldPos(_activeInteractor);
-        // _prevHandLocal = reference.InverseTransformPoint(handNow);
-        // _grabNeutralLocal = _prevHandLocal;
+        Vector3 handNow = GetInteractorWorldPos(_activeInteractor);
+        _grabNeutralLocal = reference.InverseTransformPoint(handNow);
         _hasPrevHandLocal = true;
 
         Quaternion handRotNow = GetInteractorWorldRot(_activeInteractor);
@@ -152,6 +151,10 @@ public class CockpitSimpleTurn : MonoBehaviour{
             Quaternion handRotInit = GetInteractorWorldRot(_activeInteractor);
             _prevHandLocalRot = Quaternion.Inverse(reference.rotation) * handRotInit;
             _grabNeutralLocalRot = _prevHandLocalRot;
+
+            Vector3 handPosInit = GetInteractorWorldPos(_activeInteractor);
+            _grabNeutralLocal = reference.InverseTransformPoint(handPosInit);
+
             _hasPrevHandLocal = true;
             return;
         }
@@ -159,24 +162,28 @@ public class CockpitSimpleTurn : MonoBehaviour{
         float dt = Mathf.Max(Time.deltaTime, 0.0001f);
         float gMul = GetGravitySpeedMultiplier();
 
+        // === Yaw（偏航）：由手柄旋转角（Z 轴 roll）控制 ===
         Quaternion handRotNow = GetInteractorWorldRot(_activeInteractor);
         Quaternion nowLocalRot = Quaternion.Inverse(reference.rotation) * handRotNow;
-
         Quaternion deltaRot = Quaternion.Inverse(_grabNeutralLocalRot) * nowLocalRot;
         Vector3 e = deltaRot.eulerAngles;
-
         float yawAngle = -Mathf.DeltaAngle(0f, e.z);
-        float pitchAngle = Mathf.DeltaAngle(0f, e.x);
-
         float rx = AngleToAnalog(yawAngle, rotationDeadzoneDeg, maxRotationForFullSpeedDeg);
-        float fx = AngleToAnalog(-pitchAngle, rotationDeadzoneDeg, maxRotationForFullSpeedDeg);
+
+        // === Pitch（俯仰）：由手柄前后位移控制 ===
+        // 向前推 = 低头（pitch 增大），向后拉 = 抬头（pitch 减小）
+        Vector3 handPosNow = GetInteractorWorldPos(_activeInteractor);
+        Vector3 handLocalPos = reference.InverseTransformPoint(handPosNow);
+        float forwardOffset = handLocalPos.z - _grabNeutralLocal.z;
+        float fx = OffsetToAnalog(forwardOffset, pitchPositionDeadzoneMeters, pitchMaxOffsetForFullSpeed);
 
         LastLateralAnalog = rx;
-        LastForwardAnalog = fx;
+        LastForwardAnalog = -fx;  // 取反以匹配模型视觉方向（手向前→杆向前倾）；不影响相机俯仰（由 _fxSmoothed 独立控制）
 
-        // float yawDelta = rx * yawDegreesPerSecond * gMul * dt;
-        // pivot.Rotate(0f, yawDelta, 0f, Space.World);
-        
+        // 通知外部系统（教程）：玩家产生了有效转向输入
+        if (Mathf.Abs(rx) > 0.05f || Mathf.Abs(fx) > 0.05f)
+            OnTurnInputDetected?.Invoke();
+
         // smooth input
         float a = 1f - Mathf.Exp(-inputSmooth * dt);
         _rxSmoothed = Mathf.Lerp(_rxSmoothed, rx, a);
@@ -184,9 +191,9 @@ public class CockpitSimpleTurn : MonoBehaviour{
 
         // target angle rate
         float targetYawRate = _rxSmoothed * yawDegreesPerSecond * gMul;
-        float targetPitchRate = -_fxSmoothed * pitchDegreesPerSecond * gMul;
+        float targetPitchRate = _fxSmoothed * pitchDegreesPerSecond * gMul;
 
-        //speed ramp
+        // speed ramp
         float yawAccel = (yawDegreesPerSecond * gMul) / Mathf.Max(0.01f, timeToMaxTurnRate);
         float yawDecel = (yawDegreesPerSecond * gMul) / Mathf.Max(0.01f, timeToStopTurn);
         float pitchAccel = (pitchDegreesPerSecond * gMul) / Mathf.Max(0.01f, timeToMaxTurnRate);
@@ -197,11 +204,7 @@ public class CockpitSimpleTurn : MonoBehaviour{
 
         // apply rotation
         pivot.Rotate(0f, _yawRate * dt, 0f, Space.World);
-        _currentPitch = Mathf.Clamp(_currentPitch + _pitchRate * dt, -maxPitchUp, maxPitchDown);   
-
-
-        float pitchDelta = -fx * pitchDegreesPerSecond * gMul * dt;
-        _currentPitch = Mathf.Clamp(_currentPitch + pitchDelta, -maxPitchUp, maxPitchDown);
+        _currentPitch = Mathf.Clamp(_currentPitch + _pitchRate * dt, -maxPitchUp, maxPitchDown);
 
         Vector3 pivotEuler = pivot.localEulerAngles;
         pivotEuler.x = _currentPitch;
@@ -236,11 +239,11 @@ public class CockpitSimpleTurn : MonoBehaviour{
         return fwd;
     }
 
-    // static Vector3 GetInteractorWorldPos(IXRSelectInteractor interactor)
-    // {
-    //     Transform t = interactor.GetAttachTransform(null);
-    //     return t != null ? t.position : Vector3.zero;
-    // }
+    static Vector3 GetInteractorWorldPos(IXRSelectInteractor interactor)
+    {
+        Transform t = interactor.GetAttachTransform(null);
+        return t != null ? t.position : Vector3.zero;
+    }
 
     static Quaternion GetInteractorWorldRot(IXRSelectInteractor interactor)
     {
@@ -257,5 +260,16 @@ public class CockpitSimpleTurn : MonoBehaviour{
         float denom = Mathf.Max(0.0001f, fullSpeedDeg - deadzoneDeg);
         float t = Mathf.Clamp01(over / denom);
         return Mathf.Sign(angleDeg) * t;
+    }
+
+    static float OffsetToAnalog(float offsetMeters, float deadzoneMeters, float maxOffsetMeters)
+    {
+        float abs = Mathf.Abs(offsetMeters);
+        if (abs <= deadzoneMeters) return 0f;
+
+        float over = abs - deadzoneMeters;
+        float denom = Mathf.Max(0.0001f, maxOffsetMeters - deadzoneMeters);
+        float t = Mathf.Clamp01(over / denom);
+        return Mathf.Sign(offsetMeters) * t;
     }
 }

@@ -258,9 +258,32 @@ public class UIManager : MonoBehaviour
 
         switch (state)
         {
-            case GameFlowManager.FlowState.WaitingForSequence:
+            case GameFlowManager.FlowState.WaitingForTrigger:
                 missionText.gameObject.SetActive(true);
-                missionText.text = "Mission: Activate the system [ABBBBCD]";
+                missionText.text = "Press Right Trigger to start";
+                break;
+
+            case GameFlowManager.FlowState.TutorialLook:
+                missionText.gameObject.SetActive(true);
+                missionText.text = "Press the RGrip button to adjust perspective";
+                break;
+
+            case GameFlowManager.FlowState.TutorialMove:
+                missionText.gameObject.SetActive(true);
+                float tutDist = GetBeaconDistance();
+                missionText.text = tutDist >= 0f
+                    ? $"Press the LGrip button to move\ngo forward to the beacon [{tutDist:F0}m]"
+                    : "Press the LGrip button to move\ngo forward to the beacon";
+                break;
+
+            case GameFlowManager.FlowState.TutorialSequence:
+                missionText.gameObject.SetActive(true);
+                missionText.text = "Directly touch the button to register command sequence\nThe sequence list is on your right, please activate your gundam";
+                break;
+
+            case GameFlowManager.FlowState.TutorialShoot:
+                missionText.gameObject.SetActive(true);
+                missionText.text = "Press the Right Trigger button to shoot";
                 break;
 
             case GameFlowManager.FlowState.Stage1:

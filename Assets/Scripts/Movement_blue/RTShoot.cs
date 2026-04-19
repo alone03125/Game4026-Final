@@ -1,8 +1,10 @@
+using System;
 using UnityEngine;
 using UnityEngine.XR;
 
 public class RTShoot : MonoBehaviour
 {
+    public static event Action OnShotFired;
     [Header("References")]
     [SerializeField] private Transform bulletOrigin;
     [SerializeField] private GameObject bulletPrefab;
@@ -114,6 +116,9 @@ public class RTShoot : MonoBehaviour
             rb.useGravity = false;
             rb.velocity = bulletOrigin.forward * bulletSpeed;
         }
+
+        // 通知外部系统（教程等）
+        OnShotFired?.Invoke();
 
         // 射击震动（屏幕）
         CockpitShake.TriggerShoot();

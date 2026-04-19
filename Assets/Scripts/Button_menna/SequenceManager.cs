@@ -2,23 +2,25 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using TMPro;
 using UnityEngine;
 
 public class SequenceManager : MonoBehaviour
 {
     public static SequenceManager Instance { get; private set; }
 
-    // �������л�������ʹ��StringBuilder�����Ӵ���ȡ��
+    [SerializeField] private TMP_Text sequenceDisplayText;
+
+    private const int MAX_DISPLAY_LENGTH = 15;
+    private Queue<char> recentInputs = new Queue<char>();
+
+    // 输入缓冲区，用于存储玩家的按键序列
     private StringBuilder inputBuffer = new StringBuilder();
 
-    // ģʽ�ֵ䣺��Ϊģʽ�ַ�������"ABBC"����ֵΪ����ʱ�Ļص�
     private Dictionary<string, Action> patterns = new Dictionary<string, Action>();
 
-    // ��¼ÿ��ģʽ���һ�α�����ʱ�Ľ����������������ַ�λ�ã���0��ʼ��
-    // ���ڷ�ֹͬһ�Ӵ��ظ�������ͬʱ������ͬģʽ�ڲ�ͬλ���ٴδ���
     private Dictionary<string, int> lastTriggerEndIndex = new Dictionary<string, int>();
 
-    // ��ѡ����������󳤶ȣ���ֹ��������������ʵ������������˴���Ϊ100�㹻���Ǹ������У�
     private const int MAX_BUFFER_LENGTH = 1000;
 
     // 缓存场景中的目标组件引用
@@ -27,7 +29,7 @@ public class SequenceManager : MonoBehaviour
 
     // 玩家死亡标记：死亡时屏蔽复活以外的所有序列
     private bool _playerDead = false;
-    private const string REVIVE_PATTERN = "ABBBBCD";
+    private const string REVIVE_PATTERN = "ABBCD";
 
     void Awake()
     {
@@ -37,7 +39,7 @@ public class SequenceManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject); // ���ڳ����л�������VR��Ŀ�ɰ������
+        DontDestroyOnLoad(gameObject);
 
         rtShoot      = FindObjectOfType<RTShoot>();
         playerHealth = FindObjectOfType<PlayerHealth>();
@@ -58,20 +60,20 @@ public class SequenceManager : MonoBehaviour
             else Debug.LogWarning("[SequenceManager] PlayerHealth not found for DBAC");
         });
 
-        // BCADBACD：机甲修复——恢复最大生命值的 20%
-        RegisterPattern("BCADBACD", () =>
+        // CABDBAC：机甲修复——恢复最大生命值的 20%
+        RegisterPattern("CABDBAC", () =>
         {
             if (playerHealth == null) playerHealth = FindObjectOfType<PlayerHealth>();
             if (playerHealth != null) playerHealth.HealPercent(0.2f);
-            else Debug.LogWarning("[SequenceManager] PlayerHealth not found for BCADBACD");
+            else Debug.LogWarning("[SequenceManager] PlayerHealth not found for CABDBAC");
         });
 
-        // ABBBBCD：复活——以 70% 最大生命值复活（仅死亡状态有效）
-        RegisterPattern("ABBBBCD", () =>
+        // ABBCD：复活——以 70% 最大生命值复活（仅死亡状态有效）
+        RegisterPattern("ABBCD", () =>
         {
             if (playerHealth == null) playerHealth = FindObjectOfType<PlayerHealth>();
             if (playerHealth != null) playerHealth.RevivePartial(0.7f);
-            else Debug.LogWarning("[SequenceManager] PlayerHealth not found for ABBBBCD");
+            else Debug.LogWarning("[SequenceManager] PlayerHealth not found for ABBCD");
         });
     }
 
@@ -88,49 +90,47 @@ public class SequenceManager : MonoBehaviour
             patterns.Add(sequence, effect);
         }
 
-        // ��ʼ����ģʽ����󴥷�����Ϊ -1����ʾ��δ����
         if (!lastTriggerEndIndex.ContainsKey(sequence))
             lastTriggerEndIndex[sequence] = -1;
         else
             lastTriggerEndIndex[sequence] = -1;
     }
 
-    /// <summary>
-    /// �ⲿ���ã���Ұ���ĳ����ťʱ�������Ӧ�ַ���A/B/C/D��
-    /// </summary>
+    private void UpdateSequenceDisplay()
+    {
+        if (sequenceDisplayText != null)
+        {
+            sequenceDisplayText.text = "Current Command Sequence: " + new string(recentInputs.ToArray());
+        }
+    }
+
     public void OnButtonPressed(char buttonChar)
     {
-        // ׷�ӵ�������
+        // 更新最近15个输入的显示队列
+        recentInputs.Enqueue(buttonChar);
+        while (recentInputs.Count > MAX_DISPLAY_LENGTH)
+            recentInputs.Dequeue();
+        UpdateSequenceDisplay();
+
         inputBuffer.Append(buttonChar);
 
-        // ���ƻ��������ȣ��������µĲ��֣���ֹ����Ҳ�Ӱ��Զ������ӣ�
         if (inputBuffer.Length > MAX_BUFFER_LENGTH)
         {
             int excess = inputBuffer.Length - MAX_BUFFER_LENGTH;
             inputBuffer.Remove(0, excess);
 
-            // ��Ҫ�������Ƴ���ǰ׺������ģʽ����󴥷�������Ҫͬ����ȥƫ��������������ʧЧ��
-            // ��ʵ�֣��������д�����¼�������Ѵ�����ģʽ��ʣ������������ƥ�䣨����Ԥ�ڣ���Ϊ��ǰ׺�Ѷ�����
             var keys = new List<string>(lastTriggerEndIndex.Keys);
             foreach (var key in keys)
             {
                 lastTriggerEndIndex[key] = -1;
             }
-            // ע�⣺���ú���ܵ���ͬһģʽ�ڱ����������б��ٴδ�������ԭģʽ�Ѿ����������ٴδ��������Ƕ���ģ���ͨ��Ӱ�첻��
-            // ����ȷ�������Ǳ��������������¼����Ѵ������䣬Ϊ��������һ����Ϸ�������û����ᳬ�����룩���˴����ô�����
         }
 
-        // ��鲢��������ƥ���ģʽ
         CheckAndTriggerMatches();
     }
 
-    /// <summary>
-    /// �ڻ������в�������δ��������ģʽ�Ӵ�����ִ�ж�ӦЧ��
-    /// ֧��һ�����봥������ص�/���ص�ģʽ�����е������ԣ�
-    /// </summary>
     private void CheckAndTriggerMatches()
     {
-        // �ռ�������Ҫ�����ģ�ģʽ�������������ԣ������ڱ������޸��ֵ�
         List<(string pattern, int endIndex)> toTrigger = new List<(string, int)>();
 
         foreach (var kvp in patterns)
@@ -139,29 +139,22 @@ public class SequenceManager : MonoBehaviour
             int patternLen = pattern.Length;
             int lastEnd = lastTriggerEndIndex[pattern];
 
-            // �ڻ������в������п��ܵ�ƥ���Ӵ�
             for (int start = 0; start <= inputBuffer.Length - patternLen; start++)
             {
                 int end = start + patternLen - 1;
-                // ֻ���ǽ������������ϴδ���λ�õ��Ӵ�����ֹ�ظ�����ͬһ���䣩
                 if (end > lastEnd)
                 {
-                    // ��ȡ�Ӵ��Ƚϣ�����ģʽ����һ���С��ToString�����ɽ��ܣ�
                     string sub = inputBuffer.ToString(start, patternLen);
                     if (sub == pattern)
                     {
                         toTrigger.Add((pattern, end));
-                        // ע�⣺һ��ģʽ������ͬһ���ж��ƥ�䣨������������ͬʱ����������ͬģʽ�Ĳ�ͬλ�ã�
-                        // �����ռ����У��Ժ�ͳһ������������ lastTriggerEndIndex Ϊ���ֵ��
                     }
                 }
             }
         }
 
-        // Ϊ�����򴥷�˳���������໥Ӱ�죬�Ȱ�������������С�����ȣ�����������Ȼ˳��
         toTrigger.Sort((a, b) => a.endIndex.CompareTo(b.endIndex));
 
-        // ִ�д�����������ÿ��ģʽ����󴥷�������ȡ��ǰ���и�ģʽ��������������
         Dictionary<string, int> maxEndForPattern = new Dictionary<string, int>();
         foreach (var item in toTrigger)
         {
@@ -175,21 +168,17 @@ public class SequenceManager : MonoBehaviour
         {
             string pat = item.pattern;
             int end = item.endIndex;
-            // �ٴ�ȷ�ϸ�ģʽ�ڴ�����δ����������ͬ��������������ֹ�����˳���ظ�������
             if (end > lastTriggerEndIndex[pat])
             {
-                // ִ��Ч���ص�
                 if (patterns.TryGetValue(pat, out Action action))
                 {
                     // 玩家死亡时，只允许执行复活序列
                     if (_playerDead && pat != REVIVE_PATTERN) continue;
                     action?.Invoke();
                 }
-                // ������󴥷�����Ϊ���ָ�ģʽ���������������������д�����ͳһ���£�
             }
         }
 
-        // ͳһ���¸�ģʽ�� lastTriggerEndIndex Ϊ���ּ�⵽������������
         foreach (var kvp in maxEndForPattern)
         {
             lastTriggerEndIndex[kvp.Key] = kvp.Value;
@@ -205,7 +194,7 @@ public class SequenceManager : MonoBehaviour
         if (Instance != null) Instance._playerDead = dead;
     }
 
-    // ��ѡ���ṩ������еķ������������û���ԣ�
+    // 清空当前输入缓冲区和所有模式的触发状态
     public void ClearSequence()
     {
         inputBuffer.Clear();
@@ -213,10 +202,10 @@ public class SequenceManager : MonoBehaviour
         {
             lastTriggerEndIndex[key] = -1;
         }
-        Debug.Log("�������������");
+        Debug.Log("已清空当前输入缓冲区和所有模式的触发状态");
     }
 
-    // ���ԣ���ӡ��ǰ���������ݣ���ѡ��
+    // 获取当前输入缓冲区的内容
     public string GetCurrentSequence() => inputBuffer.ToString();
 }
 

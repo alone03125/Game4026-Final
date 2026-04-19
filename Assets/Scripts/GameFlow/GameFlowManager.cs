@@ -1,9 +1,10 @@
 using UnityEngine;
+using UnityEngine.XR;
 
 /// <summary>
-/// 管理整体游戏流程，共四个阶段：
-///   等待序列 → 阶段1 → 信标1 → 阶段2 → 信标2 → 阶段3 → 信标3 → Boss阶段 → 游戏结束
-/// 依赖：SequenceManager、GameManager（配置数据）、EnemySpawner、BossController
+/// 管理整体游戏流程：
+///   等待Trigger → 教程(视角→移动→序列→射击) → 阶段1 → 信标1 → 阶段2 → 信标2 → 阶段3 → 信标3 → Boss阶段 → 游戏结束
+/// 依赖：SequenceManager、GameManager（配置数据）、EnemySpawner、BossController、RTShoot
 /// </summary>
 public class GameFlowManager : MonoBehaviour
 {
@@ -15,7 +16,11 @@ public class GameFlowManager : MonoBehaviour
 
     public enum FlowState
     {
-        WaitingForSequence, // 等待按钮序列输入
+        WaitingForTrigger,  // 等待按下 Trigger 开始游戏
+        TutorialLook,       // 教程：拉动右摇杆调整视角
+        TutorialMove,       // 教程：移动到信标位置
+        TutorialSequence,   // 教程：输入 ABBCD 序列
+        TutorialShoot,      // 教程：射击
         Stage1,             // 第一战斗阶段
         Beacon1,            // 信标过渡（1→2）
         Stage2,             // 第二战斗阶段
@@ -44,6 +49,10 @@ public class GameFlowManager : MonoBehaviour
     [Tooltip("阶段 3 结束后信标生成的世界坐标")]
     public Vector3 beacon3Position = Vector3.zero;
 
+    [Header("=== 教程信标设置 ===")]
+    [Tooltip("教程阶段信标生成的世界坐标")]
+    public Vector3 tutorialBeaconPosition = Vector3.zero;
+
     [Header("=== Boss 设置 ===")]
     [Tooltip("Boss Prefab（需挂载 BossController）")]
     public GameObject bossPrefab;
@@ -54,12 +63,17 @@ public class GameFlowManager : MonoBehaviour
     // 私有状态
     // ─────────────────────────────────────────────
 
-    private FlowState currentState = FlowState.WaitingForSequence;
+    private FlowState currentState = FlowState.WaitingForTrigger;
     private int currentStageIndex = 0;  // 0=阶段1，1=阶段2，2=阶段3
     private int currentKills = 0;
 
     private GameObject activeBeacon;
     private GameObject activeBoss;
+
+    // XR 输入设备
+    private InputDevice rightHandDevice;
+    private InputDevice leftHandDevice;
+    private bool _triggerWasPressed;
 
     // ─────────────────────────────────────────────
     // Unity 生命周期
@@ -79,30 +93,142 @@ public class GameFlowManager : MonoBehaviour
     {
         ValidateReferences();
 
-        // 注册解锁序列
-        if (SequenceManager.Instance != null)
-            SequenceManager.Instance.RegisterPattern("ABBBBCD", OnUnlockSequenceCompleted);
-        else
-            Debug.LogError("[GameFlowManager] SequenceManager.Instance 未找到！");
-
         // 订阅 Boss 死亡事件
         BossController.OnBossDied += OnBossKilled;
+        // 订阅转向事件（教程步骤1）
+        CockpitSimpleTurn.OnTurnInputDetected += OnTutorialTurnDetected;
     }
 
     void OnDestroy()
     {
         BossController.OnBossDied -= OnBossKilled;
+        RTShoot.OnShotFired -= OnTutorialShotFired;
+        CockpitSimpleTurn.OnTurnInputDetected -= OnTutorialTurnDetected;
+    }
+
+    void Update()
+    {
+        TryGetXRDevices();
+
+        switch (currentState)
+        {
+            case FlowState.WaitingForTrigger:
+                UpdateWaitingForTrigger();
+                break;
+            // TutorialLook — 由 CockpitSimpleTurn.OnTurnInputDetected 事件驱动
+            // TutorialMove — 由信标触发回调驱动
+            // TutorialSequence — 由 SequenceManager 回调驱动
+            // TutorialShoot — 由 RTShoot.OnShotFired 回调驱动
+        }
+    }
+
+    void TryGetXRDevices()
+    {
+        if (!rightHandDevice.isValid)
+            rightHandDevice = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+        if (!leftHandDevice.isValid)
+            leftHandDevice = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
     }
 
     // ─────────────────────────────────────────────
-    // 解锁序列
+    // 教程：等待 Trigger 开始
     // ─────────────────────────────────────────────
 
-    void OnUnlockSequenceCompleted()
+    void UpdateWaitingForTrigger()
     {
-        if (currentState != FlowState.WaitingForSequence) return;
+        bool triggerPressed = false;
+        rightHandDevice.TryGetFeatureValue(CommonUsages.triggerButton, out triggerPressed);
 
-        Debug.Log("[GameFlowManager] 解锁序列触发，开启第一阶段！");
+        if (triggerPressed && !_triggerWasPressed)
+        {
+            Debug.Log("[GameFlowManager] Trigger pressed, starting tutorial!");
+            currentState = FlowState.TutorialLook;
+        }
+        _triggerWasPressed = triggerPressed;
+    }
+
+    // ─────────────────────────────────────────────
+    // 教程步骤 1：调整视角（CockpitSimpleTurn 事件）
+    // ─────────────────────────────────────────────
+
+    void OnTutorialTurnDetected()
+    {
+        if (currentState != FlowState.TutorialLook) return;
+
+        Debug.Log("[GameFlowManager] Tutorial: Turn input detected, proceeding to move step.");
+        StartTutorialMove();
+    }
+
+    // ─────────────────────────────────────────────
+    // 教程步骤 2：移动到信标（左摇杆）
+    // ─────────────────────────────────────────────
+
+    void StartTutorialMove()
+    {
+        currentState = FlowState.TutorialMove;
+
+        if (beaconPrefab == null)
+        {
+            Debug.LogError("[GameFlowManager] beaconPrefab 未赋值！");
+            return;
+        }
+
+        activeBeacon = Instantiate(beaconPrefab, tutorialBeaconPosition, Quaternion.identity);
+        BeaconTrigger trigger = activeBeacon.GetComponent<BeaconTrigger>();
+        if (trigger == null) trigger = activeBeacon.AddComponent<BeaconTrigger>();
+        trigger.OnPlayerEntered = OnTutorialBeaconTriggered;
+
+        Debug.Log($"[GameFlowManager] Tutorial beacon spawned at {tutorialBeaconPosition}");
+    }
+
+    void OnTutorialBeaconTriggered()
+    {
+        if (activeBeacon != null)
+        {
+            Destroy(activeBeacon);
+            activeBeacon = null;
+        }
+        StartTutorialSequence();
+    }
+
+    // ─────────────────────────────────────────────
+    // 教程步骤 3：输入 ABBCD 序列
+    // ─────────────────────────────────────────────
+
+    void StartTutorialSequence()
+    {
+        currentState = FlowState.TutorialSequence;
+
+        if (SequenceManager.Instance != null)
+            SequenceManager.Instance.RegisterPattern("ABBCD", OnTutorialSequenceCompleted);
+        else
+            Debug.LogError("[GameFlowManager] SequenceManager.Instance 未找到！");
+    }
+
+    void OnTutorialSequenceCompleted()
+    {
+        if (currentState != FlowState.TutorialSequence) return;
+
+        Debug.Log("[GameFlowManager] Tutorial: ABBCD sequence completed!");
+        StartTutorialShoot();
+    }
+
+    // ─────────────────────────────────────────────
+    // 教程步骤 4：射击
+    // ─────────────────────────────────────────────
+
+    void StartTutorialShoot()
+    {
+        currentState = FlowState.TutorialShoot;
+        RTShoot.OnShotFired += OnTutorialShotFired;
+    }
+
+    void OnTutorialShotFired()
+    {
+        if (currentState != FlowState.TutorialShoot) return;
+
+        RTShoot.OnShotFired -= OnTutorialShotFired;
+        Debug.Log("[GameFlowManager] Tutorial: Shot fired, starting Stage 1!");
         StartCombatStage(0);
     }
 
