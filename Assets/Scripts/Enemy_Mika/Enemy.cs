@@ -64,8 +64,14 @@ public class Enemy : MonoBehaviour
     public GameObject explosionPrefab;
 
     [Header("攻击特效")]
-    [Tooltip("发射子弹时在敌人位置播放的攻击特效预制体（VFX_EnemyAtk），留空则跳过")]
+    [Tooltip("是否启用攻击特效；关闭时即使赋值了预制体也不会触发")]
+    public bool enableAttackVFX = false;
+    [Tooltip("发射子弹时播放的攻击特效预制体（VFX_EnemyAtk），留空则跳过")]
     public GameObject attackVFXPrefab;
+    [Tooltip("攻击特效的生成位置（拖入敌人身上的子Transform）；留空则使用敌人自身位置")]
+    public Transform attackVFXSpawnPoint;
+    [Tooltip("攻击特效的自动销毁延迟（秒）；为 0 则由特效自身的粒子时长决定")]
+    public float attackVFXLifetime = 0f;
 
     private Transform player;
     private Vector3 velocity;                  // 当前速度向量
@@ -305,10 +311,14 @@ public class Enemy : MonoBehaviour
             {
                 Vector3 direction = (player.position - transform.position).normalized;
 
-                // 攻击特效：独立于子弹，始终触发
-                Debug.Log($"[Enemy] attackVFXPrefab={(attackVFXPrefab == null ? "NULL" : attackVFXPrefab.name)}, explosionPrefab={(explosionPrefab == null ? "NULL" : explosionPrefab.name)}");
-                if (attackVFXPrefab != null)
-                    SpawnVFX(attackVFXPrefab, transform.position, Quaternion.LookRotation(direction));
+                // 攻击特效：在指定位置朝向玩家生成，独立实例，不挂载在敌人上
+                if (enableAttackVFX && attackVFXPrefab != null)
+                {
+                    Vector3 vfxPos = attackVFXSpawnPoint != null
+                        ? attackVFXSpawnPoint.position
+                        : transform.position;
+                    SpawnAttackVFX(attackVFXPrefab, vfxPos, Quaternion.LookRotation(direction), attackVFXLifetime);
+                }
 
                 if (enemyBulletPrefab != null)
                 {
@@ -541,6 +551,43 @@ public class Enemy : MonoBehaviour
     }
 
     /// <summary>
+    /// 生成攻击触发式 VFX：在指定位置朝向玩家实例化，不挂载在敌人上，播放后自动销毁。
+    /// 同一时刻可存在多个实例。
+    /// </summary>
+    /// <param name="overrideLifetime">大于 0 时强制覆盖销毁延迟（秒）；否则由粒子时长决定</param>
+    static void SpawnAttackVFX(GameObject prefab, Vector3 pos, Quaternion rot, float overrideLifetime = 0f)
+    {
+        if (prefab == null) return;
+
+        // 在世界空间生成，parent 为 null，不跟随敌人移动
+        GameObject fx = Instantiate(prefab, pos, rot, null);
+
+        ParticleSystem[] allPs = fx.GetComponentsInChildren<ParticleSystem>(true);
+        float maxDuration = overrideLifetime > 0f ? overrideLifetime : 2f;
+
+        foreach (ParticleSystem p in allPs)
+        {
+            p.gameObject.SetActive(true);
+            p.Play(true);
+
+            if (overrideLifetime <= 0f)
+            {
+                var lt = p.main.startLifetime;
+                float lifetime = lt.mode == ParticleSystemCurveMode.Constant
+                    ? lt.constant
+                    : Mathf.Max(lt.constantMin, lt.constantMax);
+                float totalDur = p.main.duration + lifetime;
+                if (totalDur > maxDuration) maxDuration = totalDur;
+            }
+        }
+
+        if (allPs.Length == 0 && overrideLifetime <= 0f)
+            maxDuration = 5f; // 无粒子系统时保底 5 秒销毁
+
+        Destroy(fx, maxDuration + 0.5f);
+    }
+
+    /// <summary>
     /// 实例化 VFX 预制体，播放其层级内所有 ParticleSystem，并在播放完毕后自动销毁。
     /// </summary>
     static void SpawnVFX(GameObject prefab, Vector3 pos, Quaternion rot)
@@ -603,8 +650,9 @@ public class Enemy : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.collider.CompareTag("PlayerBody"))
+        if (collision.collider.CompareTag("PlayerBody")){
             HandlePlayerBodyContact(collision.collider.gameObject);
+        }
     }
 
     public void SetSpawner(EnemySpawner sp)
