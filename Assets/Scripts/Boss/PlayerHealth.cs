@@ -88,6 +88,9 @@ public class PlayerHealth : MonoBehaviour
         // 受击震动
         CockpitShake.TriggerHit();
 
+        //play SFX
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.PlayerHurt, transform, 0.95f);
+
         Debug.Log($"[Player] 受到伤害 {damage}，当前血量：{currentHealth}/{maxHealth}");
         UpdateUI();
 
@@ -98,6 +101,9 @@ public class PlayerHealth : MonoBehaviour
     public void AddShield(int count)
     {
         shieldCount = Mathf.Min(shieldCount + count, MAX_SHIELD_COUNT);
+        // play SFX
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.PlayerShieldOn, transform, 1f);
+
         Debug.Log($"[Player] 护盾充能，当前护盾次数：{shieldCount}");
     }
 
@@ -131,6 +137,9 @@ public class PlayerHealth : MonoBehaviour
         if (_poseRoutine != null) StopCoroutine(_poseRoutine);
         _poseRoutine = StartCoroutine(RotateToRoutine(_aliveRotation));
 
+        // play SFX
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.PlayerRespawn, transform, 1f);
+
         Debug.Log($"[Player] 玩家以 {healthFraction * 100f:F0}% 生命值复活！");
     }
 
@@ -140,6 +149,8 @@ public class PlayerHealth : MonoBehaviour
         if (isDead) return;
         currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
         UpdateUI();
+        // play SFX
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.PlayerHeal, transform, 0.9f);
     }
 
     private void SetMovementEnabled(bool enabled)
@@ -153,6 +164,9 @@ public class PlayerHealth : MonoBehaviour
     {
         if (isDead) return;
         isDead = true;
+
+        // play SFX
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.PlayerFall, transform, 1f);
 
         // 屏蔽除复活以外的所有按钮序列
         SequenceManager.SetPlayerDead(true);
@@ -188,6 +202,9 @@ public class PlayerHealth : MonoBehaviour
 
         if (_poseRoutine != null) StopCoroutine(_poseRoutine);
         _poseRoutine = StartCoroutine(RotateToRoutine(_aliveRotation));
+
+        // play SFX
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.PlayerRespawn, transform, 1f);
 
         Debug.Log("[Player] 玩家复活！");
     }

@@ -120,6 +120,9 @@ public class RTShoot : MonoBehaviour
         // 通知外部系统（教程等）
         OnShotFired?.Invoke();
 
+        //Play SFX
+        AudioManager.Instance?.PlaySfxAtPoint(SfxId.PlayerShoot, bulletOrigin.position, 0.9f);
+
         // 射击震动（屏幕）
         CockpitShake.TriggerShoot();
 

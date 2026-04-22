@@ -46,6 +46,8 @@ public class CockpitThrottle : MonoBehaviour
     [SerializeField] float positionDeadzoneVerticalMeters = 0.02f;
     [SerializeField] float maxOffsetVerticalForFullSpeed = 0.12f;
 
+    private bool _wasMovingLastFrame = false;
+
     public float LastLateralAnalog { get; private set; }
     public float LastForwardAnalog { get; private set; }
 
@@ -95,6 +97,12 @@ public class CockpitThrottle : MonoBehaviour
         if (leverInteractable == null) return;
         leverInteractable.selectEntered.RemoveListener(OnSelectEntered);
         leverInteractable.selectExited.RemoveListener(OnSelectExited);
+
+        //play SFX
+        Transform audioTarget = mechaRoot != null ? mechaRoot : transform;
+        AudioManager.Instance?.StopLoopOnTarget(audioTarget);
+        _wasMovingLastFrame = false;
+    
     }
 
     void OnSelectEntered(SelectEnterEventArgs args)
@@ -128,6 +136,11 @@ public class CockpitThrottle : MonoBehaviour
         _thrustSpeed = 0f;
         LastLateralAnalog = 0f;
         LastForwardAnalog = 0f;
+     
+        
+        Transform audioTarget = mechaRoot != null ? mechaRoot : transform;
+        AudioManager.Instance?.StopLoopOnTarget(audioTarget);
+        _wasMovingLastFrame = false;
     }
 
     void Update()
@@ -284,6 +297,25 @@ public class CockpitThrottle : MonoBehaviour
         if (moveDir.sqrMagnitude > 0.0001f)
             CockpitShake.TriggerWalk();
 
+        //Play SFX
+        // AudioManager.Instance?.StartLoopOnTarget(SfxId.PlayerWalkLoop, mechaRoot != null ? mechaRoot : transform, 0.75f);
+
+        bool isMovingNow = moveDir.sqrMagnitude > 0.0001f;
+        Transform audioTarget = mechaRoot != null ? mechaRoot : transform;
+        if (isMovingNow)
+        {
+            CockpitShake.TriggerWalk();
+            //only (stop to move) start loop
+            if (!_wasMovingLastFrame)
+                AudioManager.Instance?.StartLoopOnTarget(SfxId.PlayerWalkLoop, audioTarget, 0.75f);
+        }
+        else
+        {
+            //Only (move to stop) close loop
+            if (_wasMovingLastFrame)
+                AudioManager.Instance?.StopLoopOnTarget(audioTarget);
+        }
+        _wasMovingLastFrame = isMovingNow;
     }
 
     Vector3 GetPlayerForwardAxis()

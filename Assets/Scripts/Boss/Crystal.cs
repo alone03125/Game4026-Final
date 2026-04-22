@@ -77,6 +77,9 @@ public class Crystal : MonoBehaviour
         currentHealth -= damage;
         currentHealth  = Mathf.Max(currentHealth, 0f);
 
+        //Play SFX
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.CrystalHit, transform, 1f);
+
         Debug.Log($"[Crystal] 受到伤害 {damage}，剩余血量：{currentHealth}/{maxHealth}");
 
         UpdateVisual();

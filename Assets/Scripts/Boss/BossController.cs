@@ -218,6 +218,9 @@ public class BossController : MonoBehaviour
         // 确保粒子效果和灯光默认关闭
         if (berserkParticleEffect != null) berserkParticleEffect.Stop();
         if (bossGlowLight          != null) bossGlowLight.enabled = false;
+
+        // Play SFX
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.BossSpawn, transform, 1f);
     }
 
     void Update()
@@ -338,6 +341,9 @@ public class BossController : MonoBehaviour
         GameObject bullet1Obj = Instantiate(bullet1Prefab, position, Quaternion.LookRotation(direction));
         bullet1Obj.tag = "BossBullet";
 
+        // Play SFX
+        AudioManager.Instance?.PlaySfxAtPoint(SfxId.BossShoot, position, 0.95f);
+
         // 让子弹忽略 Boss 自身所有碰撞体，防止刚生成就被 Boss 碰撞箱销毁
         Collider bulletCol = bullet1Obj.GetComponent<Collider>();
         if (bulletCol != null)
@@ -409,6 +415,9 @@ public class BossController : MonoBehaviour
 
     IEnumerator Phase2Routine()
     {
+        // Play SFX
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.BossPhaseChange, transform, 1f);
+
         currentPhase = 2;
         Debug.Log("[Boss] ─── 进入第二阶段！开始 5 秒无敌期 ───");
 
@@ -556,6 +565,9 @@ public class BossController : MonoBehaviour
 
     void EnterPhase3()
     {
+        //play SFX
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.BossPhaseChange, transform, 1f);
+
         currentPhase = 3;
         Debug.Log("[Boss] ─── 进入第三阶段！─── ");
         EnterBerserkMode();
@@ -593,6 +605,9 @@ public class BossController : MonoBehaviour
     {
         Debug.Log("[Boss] Boss 被击败！");
 
+        //Play SFX
+       AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.BossDeath, transform, 1f);
+       
         // 先播放死亡动画，再标记 isDead（PlayAnim 会检查 isDead）
         PlayAnim(ANIM_DEATH);
         isDead = true;
