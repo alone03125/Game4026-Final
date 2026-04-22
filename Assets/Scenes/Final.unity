@@ -838,22 +838,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1022800932690199264, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: yawDegreesPerSecond
-<<<<<<< Updated upstream
-      value: 40
-=======
       value: 28
->>>>>>> Stashed changes
+
       objectReference: {fileID: 0}
     - target: {fileID: 1022800932690199264, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: pitchDegreesPerSecond
       value: 10
-<<<<<<< Updated upstream
       objectReference: {fileID: 0}
     - target: {fileID: 1022800932690199264, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: maxRotationForFullSpeedDeg
       value: 35
-=======
->>>>>>> Stashed changes
       objectReference: {fileID: 0}
     - target: {fileID: 2364969931612313204, guid: f5d336bcc1d238748b07700f92f97907, type: 3}
       propertyPath: cameraRig

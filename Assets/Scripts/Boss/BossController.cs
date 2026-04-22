@@ -317,13 +317,9 @@ public class BossController : MonoBehaviour
         GameObject bullet1Obj = Instantiate(bullet1Prefab, position, Quaternion.LookRotation(direction));
         bullet1Obj.tag = "BossBullet";
 
-<<<<<<< Updated upstream
         // Play SFX
         AudioManager.Instance?.PlaySfxAtPoint(SfxId.BossShoot, position, 0.95f);
-
-        // 让子弹忽略 Boss 自身所有碰撞体，防止刚生成就被 Boss 碰撞箱销毁
-=======
->>>>>>> Stashed changes
+        
         Collider bulletCol = bullet1Obj.GetComponent<Collider>();
         if (bulletCol != null)
         {
@@ -567,13 +563,9 @@ public class BossController : MonoBehaviour
     {
         Debug.Log("[Boss] Boss 被击败！");
 
-<<<<<<< Updated upstream
         //Play SFX
-       AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.BossDeath, transform, 1f);
-       
-        // 先播放死亡动画，再标记 isDead（PlayAnim 会检查 isDead）
-=======
->>>>>>> Stashed changes
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.BossDeath, transform, 1f);
+
         PlayAnim(ANIM_DEATH);
         isDead = true;
 
