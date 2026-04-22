@@ -645,6 +645,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Boss 1
       objectReference: {fileID: 0}
+    - target: {fileID: 282439148828463214, guid: 99026df44b301624984e9dcce3f6b583, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 986398681071074056, guid: 99026df44b301624984e9dcce3f6b583, type: 3}
       propertyPath: m_LocalPosition.x
       value: -94.5215
@@ -808,6 +812,26 @@ PrefabInstance:
     - target: {fileID: 4418541032614523354, guid: 8cdd71ba3ad0d984dbecf421d1c05cab, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9152276568991299215, guid: 8cdd71ba3ad0d984dbecf421d1c05cab, type: 3}
+      propertyPath: sfxSettings.Array.data[0].sfx
+      value: 
+      objectReference: {fileID: 8300000, guid: a2746daa576ffb24b9cdb2b9a69edea0, type: 3}
+    - target: {fileID: 9152276568991299215, guid: 8cdd71ba3ad0d984dbecf421d1c05cab, type: 3}
+      propertyPath: sfxSettings.Array.data[0].pitch
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9152276568991299215, guid: 8cdd71ba3ad0d984dbecf421d1c05cab, type: 3}
+      propertyPath: sfxSettings.Array.data[0].use3D
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9152276568991299215, guid: 8cdd71ba3ad0d984dbecf421d1c05cab, type: 3}
+      propertyPath: sfxSettings.Array.data[0].volume
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9152276568991299215, guid: 8cdd71ba3ad0d984dbecf421d1c05cab, type: 3}
+      propertyPath: sfxSettings.Array.data[0].rolloffMode
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
