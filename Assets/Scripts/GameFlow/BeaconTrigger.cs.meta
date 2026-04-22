@@ -1,2 +1,13 @@
 fileFormatVersion: 2
 guid: d6f51b9845999e34790bbe0ee549b88d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - beamMaterial: {instanceID: 0}
+  - triggerEffect: {fileID: 57768538727584598, guid: 66132ac29d60b0a40a8259dc7d05874b, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

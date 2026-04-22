@@ -29,6 +29,13 @@ public class BeaconTrigger : MonoBehaviour
     [Range(0f, 0.5f)]
     public float pulseAmount = 0.3f;
 
+    // ★ 新增：触碰特效
+    [Header("触碰特效")]
+    [Tooltip("玩家触碰信标时播放的特效 Prefab（粒子系统等）")]
+    public GameObject triggerEffect;
+    [Tooltip("特效自动销毁延迟（秒），设为 0 则不自动销毁）")]
+    public float triggerEffectDuration = 3f;
+
     /// <summary>玩家进入信标范围时的回调，由 GameFlowManager 赋值。</summary>
     public Action OnPlayerEntered;
 
@@ -64,6 +71,10 @@ public class BeaconTrigger : MonoBehaviour
             {
                 _triggered = true;
                 Debug.Log($"[BeaconTrigger] 玩家进入信标范围（XZ距离={delta.magnitude:F2}m）");
+
+                // ★ 播放触碰特效
+                PlayTriggerEffect();
+
                 OnPlayerEntered?.Invoke();
                 return;
             }
@@ -89,5 +100,22 @@ public class BeaconTrigger : MonoBehaviour
 
         _baseStartWidth = beamStartWidth;
         _baseEndWidth   = beamEndWidth;
+    }
+
+    // ★ 新增：触碰特效播放方法
+    /// <summary>
+    /// 在信标自身位置实例化触碰特效，并在 triggerEffectDuration 秒后自动销毁。
+    /// triggerEffect 为 null 时静默跳过。
+    /// </summary>
+    void PlayTriggerEffect()
+    {
+        if (triggerEffect == null) return;
+
+        GameObject fx = Instantiate(triggerEffect, transform.position, Quaternion.identity);
+
+        if (triggerEffectDuration > 0f)
+            Destroy(fx, triggerEffectDuration);
+
+        Debug.Log($"[BeaconTrigger] 触碰特效 [{triggerEffect.name}] 已在 {transform.position} 播放。");
     }
 }

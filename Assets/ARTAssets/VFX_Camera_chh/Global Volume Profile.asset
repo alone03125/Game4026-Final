@@ -79,20 +79,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   active: 1
   postExposure:
-    m_OverrideState: 0
-    m_Value: 0.13
+    m_OverrideState: 1
+    m_Value: -0.16
   contrast:
     m_OverrideState: 0
-    m_Value: -6
+    m_Value: 19
   colorFilter:
     m_OverrideState: 1
     m_Value: {r: 1, g: 0.94555855, b: 0.9402515, a: 1}
   hueShift:
-    m_OverrideState: 1
-    m_Value: -13
+    m_OverrideState: 0
+    m_Value: -6
   saturation:
     m_OverrideState: 1
-    m_Value: 58
+    m_Value: 19
 --- !u!114 &-6271276709264459108
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -189,10 +189,10 @@ MonoBehaviour:
     m_OverrideState: 0
     m_Value: 100
   greenOutBlueIn:
-    m_OverrideState: 1
+    m_OverrideState: 0
     m_Value: -5
   blueOutRedIn:
-    m_OverrideState: 1
+    m_OverrideState: 0
     m_Value: 0
   blueOutGreenIn:
     m_OverrideState: 0
@@ -268,13 +268,13 @@ MonoBehaviour:
     m_Value: 1
   threshold:
     m_OverrideState: 1
-    m_Value: 0.38
+    m_Value: 0.55
   intensity:
     m_OverrideState: 1
-    m_Value: 1.52
+    m_Value: 1.55
   scatter:
     m_OverrideState: 1
-    m_Value: 0.688
+    m_Value: 0.773
   clamp:
     m_OverrideState: 1
     m_Value: 64158
@@ -318,7 +318,7 @@ MonoBehaviour:
     m_Value: {x: 0.9969341, y: 0.9629287, z: 1, w: 0}
   gain:
     m_OverrideState: 1
-    m_Value: {x: 0.9554592, y: 1, z: 0.74367774, w: 0}
+    m_Value: {x: 0.9973294, y: 1, z: 0.7632427, w: 0}
 --- !u!114 &7836021272383122432
 MonoBehaviour:
   m_ObjectHideFlags: 3

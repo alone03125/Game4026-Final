@@ -1,18 +1,6 @@
 using UnityEngine;
 
-/// <summary>
-/// 挂载在玩家子弹 Prefab 上，赋予子弹追踪/转向能力。
-///
-/// 底层逻辑：
-///   1. 子弹生成 (Start) 时，在 searchAngle 锥形范围内扫描 Enemy.ActiveEnemies，
-///      锁定角度最小（最靠近准心方向）的敌人作为目标，之后不再重新选取。
-///   2. 每帧 (Update/FixedUpdate) 将当前飞行方向以最大 turnSpeed 度/秒
-///      旋转向目标位置，利用 Vector3.RotateTowards 保证平滑且帧率无关。
-///   3. 如果未找到目标，子弹直线飞行，与原行为完全一致。
-///   4. 同时支持两种子弹运动模式：
-///      a. Rigidbody 模式 (RTShoot 使用)：修改 rb.velocity 方向。
-///      b. Transform 模式 (PlayerBullet/Bullet 使用)：沿 transform.forward 移动。
-/// </summary>
+
 [DisallowMultipleComponent]
 public class HomingBullet : MonoBehaviour
 {

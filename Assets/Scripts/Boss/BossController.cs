@@ -6,14 +6,6 @@ using UnityEngine;
 /// <summary>
 /// Boss 控制器
 /// 管理 Boss 的血量、三个战斗阶段、射击逻辑和关卡时间限制。
-///
-/// 使用说明：
-///   1. 将此脚本挂载到 Boss GameObject 上。
-///   2. 在 Inspector 中为各字段赋值（子弹预制体、发射点、水晶预制体等）。
-///   3. Boss GameObject 需要有 Tag = "Boss"。
-///   4. 玩家 GameObject 需要有 Tag = "Player" 并挂载 PlayerHealth 组件。
-///   5. 若要让玩家攻击命中 Boss，可在玩家攻击物体上挂载 DamageSource 组件
-///      并设置 Tag = "PlayerAttack"（近战）或 "PlayerBullet"（远程子弹）。
 /// </summary>
 public class BossController : MonoBehaviour
 {
@@ -108,49 +100,52 @@ public class BossController : MonoBehaviour
     [Tooltip("超过此时间（秒）后 Boss 强制进入狂暴，默认 480 秒 = 8 分钟")]
     public float forceBerserkTimeLimit = 480f;
 
+    // ★ 新增：阶段 / 死亡特效
+    [Header("=== 阶段 / 死亡特效 ===")]
+    [Tooltip("进入第二阶段时播放的特效 Prefab")]
+    public GameObject phase2Effect;
+    [Tooltip("进入第三阶段（狂暴）时播放的特效 Prefab")]
+    public GameObject phase3Effect;
+    [Tooltip("Boss 死亡时播放的特效 Prefab")]
+    public GameObject deathEffect;
+    [Tooltip("以上三种特效自动销毁的延迟时间（秒），设为 0 则不自动销毁）")]
+    public float phaseFxDuration = 3f;
+
     // ─────────────────────────────────────────────
     // 私有状态变量
     // ─────────────────────────────────────────────
 
-    // 血量
     private float currentHealth;
 
-    // 阶段状态
     private int  currentPhase        = 1;
     private bool phase2Triggered     = false;
     private bool phase3Triggered     = false;
 
-    // 护盾 / 免疫
     private bool isImmune            = false;
     private bool shieldActive        = false;
 
-    // 狂暴
     private bool isBerserk           = false;
 
-    // 时间限制
     private float bossStartTime;
     private bool  doubleDamageTriggered = false;
     private bool  forceBerserkTriggered = false;
 
-    // 射击计时器
     private float fireTimer = 0f;
 
-    // 护盾颜色渐变
     private Color bossOriginalColor;
     private Color bossColorTarget;
 
-    // 引用
     private Transform     playerTransform;
     private List<Crystal> activeCrystals = new List<Crystal>();
     private Renderer      bossRenderer;
 
     // ─────────────────────────────────────────────
-    // 动画（纯代码控制，无需在 Animator 中配置 Transition / Parameter）
+    // 动画
     // ─────────────────────────────────────────────
+
     private Animator animator;
     private bool  isDead = false;
 
-    // 动画状态名（必须与 Animator Controller 中的 State 名称一致）
     private const string ANIM_IDLE            = "Idle";
     private const string ANIM_ATTACK01        = "Attack01";
     private const string ANIM_ATTACK02        = "Attack02";
@@ -160,26 +155,20 @@ public class BossController : MonoBehaviour
     private const string ANIM_TURN90          = "Turn90";
     private const string ANIM_DEATH           = "Death";
 
-    // 动画过渡时间
     private const float ANIM_FADE_TIME = 0.15f;
 
-    /// <summary> 纯代码切换动画状态 </summary>
     private void PlayAnim(string stateName, float fadeTime = ANIM_FADE_TIME)
     {
         if (animator == null || isDead) return;
         animator.CrossFadeInFixedTime(stateName, fadeTime);
     }
 
-    /// <summary> 播放一次性动画后自动回到 Idle </summary>
     private IEnumerator PlayAnimThenIdle(string stateName, float fadeTime = ANIM_FADE_TIME)
     {
         PlayAnim(stateName, fadeTime);
-        // 等待一帧让 Animator 进入新状态
         yield return null;
-        // 获取当前动画片段长度
         AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
         yield return new WaitForSeconds(info.length);
-        // 动画播完回到 Idle
         if (!isDead)
             PlayAnim(ANIM_IDLE);
     }
@@ -193,29 +182,24 @@ public class BossController : MonoBehaviour
         currentHealth = maxHealth;
         bossStartTime = Time.time;
 
-        // 获取 Animator
         animator = GetComponentInChildren<Animator>();
         if (animator == null)
             Debug.LogWarning("[Boss] 未找到 Animator 组件！动画将无法播放。");
 
-        // 寻找玩家
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
             playerTransform = player.transform;
         else
             Debug.LogWarning("[Boss] 未找到 Tag=Player 的玩家对象！");
 
-        // 获取渲染器（用于发光效果）
         bossRenderer = GetComponentInChildren<Renderer>();
 
-        // 记录 Boss 原始颜色
         if (bossRenderer != null)
         {
             bossOriginalColor = bossRenderer.material.color;
             bossColorTarget   = bossOriginalColor;
         }
 
-        // 确保粒子效果和灯光默认关闭
         if (berserkParticleEffect != null) berserkParticleEffect.Stop();
         if (bossGlowLight          != null) bossGlowLight.enabled = false;
 
@@ -239,7 +223,6 @@ public class BossController : MonoBehaviour
     {
         float elapsed = Time.time - bossStartTime;
 
-        // 超过 doubleDamageTimeLimit → Boss 伤害翻倍
         if (!doubleDamageTriggered && elapsed >= doubleDamageTimeLimit)
         {
             doubleDamageTriggered = true;
@@ -248,7 +231,6 @@ public class BossController : MonoBehaviour
             Debug.Log($"[Boss] ⚠ 超时 {doubleDamageTimeLimit}s！Boss 伤害翻倍！");
         }
 
-        // 超过 forceBerserkTimeLimit → 强制狂暴
         if (!forceBerserkTriggered && elapsed >= forceBerserkTimeLimit)
         {
             forceBerserkTriggered = true;
@@ -285,7 +267,7 @@ public class BossController : MonoBehaviour
     void HandleShooting()
     {
         if (playerTransform == null) return;
-        if (isImmune)  return;   // 免疫期间停止射击
+        if (isImmune)  return;
 
         float rate     = isBerserk ? phase3FireRate : phase1FireRate;
         float interval = 1f / rate;
@@ -302,7 +284,6 @@ public class BossController : MonoBehaviour
     {
         if (bullet1Prefab == null) return;
 
-        // 播放攻击动画，等前摇结束后再发射子弹
         string attackAnim = (currentPhase >= 2) ? ANIM_ATTACK02 : ANIM_ATTACK01;
         StartCoroutine(ShootAfterWindUp(attackAnim));
     }
@@ -310,26 +291,21 @@ public class BossController : MonoBehaviour
     IEnumerator ShootAfterWindUp(string attackAnim)
     {
         PlayAnim(attackAnim);
-        // 等待一帧让 Animator 进入新状态
         yield return null;
-        // 获取攻击动画长度（用于动画播完后回 Idle）
         AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
 
-        // 根据阶段使用对应的前摇延迟
         float windUpDelay = (currentPhase >= 2) ? phase2FireDelay : phase1FireDelay;
         yield return new WaitForSeconds(windUpDelay);
 
-        // 前摇结束，发射子弹
         if (isDead || playerTransform == null) yield break;
 
         string originName = (currentPhase >= 2) ? "Bossbullet2" : "Bossbullet1";
         Transform bulletOrigin = transform.Find(originName);
         Vector3 spawnPos = (bulletOrigin != null) ? bulletOrigin.position : transform.position;
-        Vector3   dir    = (playerTransform.position - spawnPos).normalized;
+        Vector3 dir      = (playerTransform.position - spawnPos).normalized;
 
         SpawnBullet(spawnPos, dir);
 
-        // 等待剩余动画播完后回到 Idle
         float remainingDelay = Mathf.Max(0f, info.length - windUpDelay);
         yield return new WaitForSeconds(remainingDelay);
         if (!isDead)
@@ -341,10 +317,13 @@ public class BossController : MonoBehaviour
         GameObject bullet1Obj = Instantiate(bullet1Prefab, position, Quaternion.LookRotation(direction));
         bullet1Obj.tag = "BossBullet";
 
+<<<<<<< Updated upstream
         // Play SFX
         AudioManager.Instance?.PlaySfxAtPoint(SfxId.BossShoot, position, 0.95f);
 
         // 让子弹忽略 Boss 自身所有碰撞体，防止刚生成就被 Boss 碰撞箱销毁
+=======
+>>>>>>> Stashed changes
         Collider bulletCol = bullet1Obj.GetComponent<Collider>();
         if (bulletCol != null)
         {
@@ -361,16 +340,12 @@ public class BossController : MonoBehaviour
     // 伤害与血量
     // ─────────────────────────────────────────────
 
-    /// <summary>
-    /// 对 Boss 造成伤害（外部调用入口）。
-    /// </summary>
     public void TakeDamage(float damage)
     {
         if (isImmune) { Debug.Log("[Boss] 免疫中，无效伤害。"); return; }
 
         float actualDamage = damage;
 
-        // 护盾减伤
         if (shieldActive)
         {
             actualDamage *= shieldDamageReduction;
@@ -382,7 +357,6 @@ public class BossController : MonoBehaviour
 
         Debug.Log($"[Boss] 受到伤害 {actualDamage}，当前血量：{currentHealth}/{maxHealth}");
 
-        // 播放受击动画（三个受击动画随机选择）
         if (animator != null)
         {
             string[] hitAnims = { ANIM_BEEN_ATTACKED, ANIM_BEEN_ATTACKED01, ANIM_BEEN_ATTACKED02 };
@@ -421,7 +395,9 @@ public class BossController : MonoBehaviour
         currentPhase = 2;
         Debug.Log("[Boss] ─── 进入第二阶段！开始 5 秒无敌期 ───");
 
-        // 播放转身动画表示阶段切换
+        // ★ 在 Boss 当前位置播放第二阶段特效
+        PlayEffect(phase2Effect, transform.position);
+
         yield return StartCoroutine(PlayAnimThenIdle(ANIM_TURN90));
 
         isImmune = true;
@@ -436,24 +412,20 @@ public class BossController : MonoBehaviour
     {
         shieldActive = true;
 
-        // ── 发光效果 ──────────────────────
         if (bossGlowLight != null)
         {
             bossGlowLight.enabled = true;
             bossGlowLight.color   = shieldColor;
         }
 
-        // ── Boss 表面颜色渐变至护盾色 ─────
         bossColorTarget = shieldColor;
 
-        // 启用材质自发光（Standard / URP Lit Shader）
         if (bossRenderer != null)
         {
             bossRenderer.material.EnableKeyword("_EMISSION");
             bossRenderer.material.SetColor("_EmissionColor", shieldColor * 2f);
         }
 
-        // ── 生成水晶 ──────────────────────
         SpawnCrystals();
 
         Debug.Log("[Boss] 护盾已激活，4 个水晶已生成！");
@@ -473,7 +445,6 @@ public class BossController : MonoBehaviour
 
         if (crystalSpawnPoints != null && crystalSpawnPoints.Length >= CRYSTAL_COUNT)
         {
-            // 使用 Inspector 中预设的生成点
             for (int i = 0; i < CRYSTAL_COUNT; i++)
             {
                 if (crystalSpawnPoints[i] != null)
@@ -482,24 +453,18 @@ public class BossController : MonoBehaviour
         }
         else
         {
-            // 自动在 Boss 周围5格的地方扇形排布
             Debug.LogWarning("[Boss] 未设置足够的 crystalSpawnPoints，将自动生成在 Boss 周围。");
-            
-            // 获取 Boss 的碰撞体半径
+
             Collider bossCollider = GetComponent<Collider>();
-            float bossRadius = 1f; // 默认半径
+            float bossRadius = 1f;
             if (bossCollider != null)
-            {
-                // 使用碰撞体边界的最大范围作为Boss半径
                 bossRadius = bossCollider.bounds.extents.magnitude;
-            }
-            
-            // Boss 边界到水晶的距离为 5 格
+
             float spawnDistance = bossRadius + 5f;
-            
+
             for (int i = 0; i < CRYSTAL_COUNT; i++)
             {
-                float   angle    = (i - (CRYSTAL_COUNT - 1) * 0.5f) * 90f;  // 改为90度间隔，均匀分布4个
+                float   angle    = (i - (CRYSTAL_COUNT - 1) * 0.5f) * 90f;
                 Vector3 offset   = Quaternion.Euler(0f, angle, 0f) * transform.forward * spawnDistance;
                 Vector3 spawnPos = transform.position + offset + Vector3.up * 0.5f;
                 CreateCrystal(spawnPos, Quaternion.identity);
@@ -509,7 +474,7 @@ public class BossController : MonoBehaviour
 
     void CreateCrystal(Vector3 position, Quaternion rotation)
     {
-        GameObject obj    = Instantiate(crystalPrefab, position, rotation);
+        GameObject obj    = Instantiate(crystalPrefab, position, rotation * Quaternion.Euler(90f, 0f, 0f));
         Crystal    crystal = obj.GetComponent<Crystal>();
         if (crystal != null)
         {
@@ -518,9 +483,6 @@ public class BossController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 当某个水晶被摧毁时，由 Crystal.cs 回调此方法。
-    /// </summary>
     public void OnCrystalDestroyed(Crystal crystal)
     {
         activeCrystals.Remove(crystal);
@@ -539,7 +501,6 @@ public class BossController : MonoBehaviour
         if (bossRenderer != null)
             bossRenderer.material.DisableKeyword("_EMISSION");
 
-        // Boss 表面颜色渐变回原色
         bossColorTarget = bossOriginalColor;
 
         Debug.Log("[Boss] 所有水晶被摧毁，护盾解除！");
@@ -553,7 +514,6 @@ public class BossController : MonoBehaviour
     {
         if (bossRenderer == null) return;
 
-        // 每帧平滑插值 Boss 表面颜色
         Color current = bossRenderer.material.color;
         if (current != bossColorTarget)
             bossRenderer.material.color = Color.Lerp(current, bossColorTarget, shieldFadeSpeed * Time.deltaTime);
@@ -570,6 +530,10 @@ public class BossController : MonoBehaviour
 
         currentPhase = 3;
         Debug.Log("[Boss] ─── 进入第三阶段！─── ");
+
+        // ★ 在 Boss 当前位置播放第三阶段特效
+        PlayEffect(phase3Effect, transform.position);
+
         EnterBerserkMode();
     }
 
@@ -582,7 +546,6 @@ public class BossController : MonoBehaviour
 
         if (berserkParticleEffect != null)
         {
-            // 将粒子颜色改为红色（如已在粒子系统中配置则忽略此步）
             var main = berserkParticleEffect.main;
             main.startColor = Color.red;
             berserkParticleEffect.Play();
@@ -597,7 +560,6 @@ public class BossController : MonoBehaviour
 
     void OnDisable()
     {
-        // 禁用时停止所有协程，防止域重载时加载对象导致未定义行为
         StopAllCoroutines();
     }
 
@@ -605,14 +567,19 @@ public class BossController : MonoBehaviour
     {
         Debug.Log("[Boss] Boss 被击败！");
 
+<<<<<<< Updated upstream
         //Play SFX
        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.BossDeath, transform, 1f);
        
         // 先播放死亡动画，再标记 isDead（PlayAnim 会检查 isDead）
+=======
+>>>>>>> Stashed changes
         PlayAnim(ANIM_DEATH);
         isDead = true;
 
-        // 清除所有水晶
+        // ★ 在 Boss 当前位置播放死亡特效
+        PlayEffect(deathEffect, transform.position);
+
         foreach (Crystal c in activeCrystals)
             if (c != null) Destroy(c.gameObject);
         activeCrystals.Clear();
@@ -622,15 +589,33 @@ public class BossController : MonoBehaviour
 
         OnBossDied?.Invoke();
 
-        // 延迟禁用，留时间给死亡动画播放
         StartCoroutine(DeathDelayRoutine());
     }
 
     IEnumerator DeathDelayRoutine()
     {
-        // 等待死亡动画播放完毕（约 2 秒，可根据 Death.fbx 时长调整）
         yield return new WaitForSeconds(4f);
         gameObject.SetActive(false);
+    }
+
+    // ─────────────────────────────────────────────
+    // ★ 新增：特效播放通用方法
+    // ─────────────────────────────────────────────
+
+    /// <summary>
+    /// 在指定世界坐标实例化特效 Prefab，并在 phaseFxDuration 秒后自动销毁。
+    /// effectPrefab 为 null 时静默跳过，不报错。
+    /// </summary>
+    private void PlayEffect(GameObject effectPrefab, Vector3 position)
+    {
+        if (effectPrefab == null) return;
+
+        GameObject fx = Instantiate(effectPrefab, position, Quaternion.identity);
+
+        if (phaseFxDuration > 0f)
+            Destroy(fx, phaseFxDuration);
+
+        Debug.Log($"[Boss] 特效 [{effectPrefab.name}] 已在 {position} 播放，{phaseFxDuration}s 后销毁。");
     }
 
     // ─────────────────────────────────────────────
@@ -671,14 +656,11 @@ public class BossController : MonoBehaviour
     public bool  IsBerserk()         => isBerserk;
     public bool  IsImmune()          => isImmune;
 
-    /// <summary>返回关卡已经过的时间（秒）</summary>
     public float GetElapsedTime()    => Time.time - bossStartTime;
 
-    /// <summary>返回距离伤害翻倍的剩余秒数（已触发则返回 0）</summary>
     public float GetTimeUntilDoubleDamage()
         => doubleDamageTriggered ? 0f : Mathf.Max(0f, doubleDamageTimeLimit - GetElapsedTime());
 
-    /// <summary>返回距离强制狂暴的剩余秒数（已触发则返回 0）</summary>
     public float GetTimeUntilForceBerserk()
         => forceBerserkTriggered ? 0f : Mathf.Max(0f, forceBerserkTimeLimit - GetElapsedTime());
 }

@@ -59,6 +59,13 @@ public class GameFlowManager : MonoBehaviour
     [Tooltip("Boss 生成的世界坐标")]
     public Vector3 bossSpawnPosition = Vector3.zero;
 
+    // ★ 新增：Boss 生成特效
+    [Header("=== Boss 生成特效 ===")]
+    [Tooltip("Boss 生成时在其位置播放的特效 Prefab（如粒子系统）")]
+    public GameObject bossSpawnEffect;
+    [Tooltip("特效自动销毁的延迟时间（秒），设为 0 则不自动销毁")]
+    public float bossSpawnEffectDuration = 3f;
+
     // ─────────────────────────────────────────────
     // 私有状态
     // ─────────────────────────────────────────────
@@ -359,6 +366,9 @@ public class GameFlowManager : MonoBehaviour
             return;
         }
 
+        // ★ 新增：在 Boss 生成位置播放特效
+        PlayBossSpawnEffect(bossSpawnPosition);
+
         activeBoss = Instantiate(bossPrefab, bossSpawnPosition, Quaternion.identity);
 
         // Boss 阶段持续生成少量敌人干扰玩家
@@ -376,6 +386,26 @@ public class GameFlowManager : MonoBehaviour
         }
 
         Debug.Log($"[GameFlowManager] Boss 已在 {bossSpawnPosition} 生成，第四阶段（Boss关）开始！");
+    }
+
+    // ★ 新增：Boss 生成特效播放方法
+    /// <summary>
+    /// 在指定位置实例化 Boss 生成特效，并在 bossSpawnEffectDuration 秒后自动销毁。
+    /// </summary>
+    void PlayBossSpawnEffect(Vector3 position)
+    {
+        if (bossSpawnEffect == null)
+        {
+            Debug.LogWarning("[GameFlowManager] bossSpawnEffect 未赋值，跳过特效播放。");
+            return;
+        }
+
+        GameObject effect = Instantiate(bossSpawnEffect, position, Quaternion.identity);
+
+        if (bossSpawnEffectDuration > 0f)
+            Destroy(effect, bossSpawnEffectDuration);
+
+        Debug.Log($"[GameFlowManager] Boss 生成特效已在 {position} 播放，{bossSpawnEffectDuration}s 后销毁。");
     }
 
     void OnBossKilled()
@@ -421,5 +451,7 @@ public class GameFlowManager : MonoBehaviour
             Debug.LogWarning("[GameFlowManager] beaconPrefab 未赋值，信标将无法生成。");
         if (bossPrefab == null)
             Debug.LogWarning("[GameFlowManager] bossPrefab 未赋值，Boss 将无法生成。");
+        if (bossSpawnEffect == null)
+            Debug.LogWarning("[GameFlowManager] bossSpawnEffect 未赋值，Boss 生成时将没有特效。");
     }
 }

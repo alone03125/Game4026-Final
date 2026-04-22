@@ -3324,20 +3324,21 @@ MonoBehaviour:
   useHeadForward: 1
   flattenToHorizontal: 1
   yawDegreesPerSecond: 40
-  positionDeadzoneMeters: 0.02
-  maxOffsetForFullSpeed: 0.12
-  usePositionBasedTurn: 1
   pitchDegreesPerSecond: 25
   maxPitchDown: 25
   maxPitchUp: 35
-  handSpeedDeadzoneLR: 0.05
-  stillDeltaMeters: 0.0015
-  stillStopTime: 0.06
+  pitchPositionDeadzoneMeters: 0.02
+  pitchMaxOffsetForFullSpeed: 0.12
+  rotationDeadzoneDeg: 4
+  maxRotationForFullSpeedDeg: 25
   requireDirectInteractorOnly: 1
   useGameManagerGravity: 0
   gravityNeutral: 1
   minSpeedMultiplier: 0.4
   maxSpeedMultiplier: 1.8
+  timeToMaxTurnRate: 0.3
+  timeToStopTurn: 0.2
+  inputSmooth: 8
 --- !u!114 &3132590389957813970
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7942,6 +7943,8 @@ MonoBehaviour:
   overheatThreshold: 200
   normalCoolRate: 50
   overheatCoolRate: 25
+  hapticAmplitude: 0.4
+  hapticDuration: 0.05
 --- !u!65 &1399208379404847166
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8014,10 +8017,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa2af28cf7469564c92490cefd5fa315, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  walkShake:
-    amplitude: 0.04
-    frequency: 0.4
-    duration: 0.3
+  cockpitBody: {fileID: 0}
+  mechWalk:
+    stepRate: 0.6
+    verticalAmplitude: -0.025
+    lateralAmplitude: 0.01
+    impactAmplitude: 0.03
+    impactDecay: 2.1
+    fadeOutTime: 0.18
   shootShake:
     amplitude: 0.015
     frequency: 25
@@ -9114,13 +9121,13 @@ Transform:
   m_GameObject: {fileID: 2767009170448470931}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.9070129, y: -17.424534, z: 32.757507}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 17.92455, y: -151.83363, z: 297.646}
+  m_LocalScale: {x: 8.886678, y: 8.886678, z: 8.886678}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 592527960646108403}
   - {fileID: 4967023308767654056}
-  m_Father: {fileID: 7429715337549824552}
+  m_Father: {fileID: 3133151723175917236}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2984397839080512433
 GameObject:
@@ -9937,7 +9944,6 @@ MonoBehaviour:
   fallAngle: 90
   fallDuration: 1
   fallAxis: {x: 0, y: 0, z: -1}
-  disableOnDeath: []
 --- !u!114 &3441937399799204085
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9950,10 +9956,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa2af28cf7469564c92490cefd5fa315, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  walkShake:
-    amplitude: 0.04
-    frequency: 0.5
-    duration: 0.3
+  cockpitBody: {fileID: 0}
+  mechWalk:
+    stepRate: 0.6
+    verticalAmplitude: -0.025
+    lateralAmplitude: 0.01
+    impactAmplitude: 0.03
+    impactDecay: 2.1
+    fadeOutTime: 0.18
   shootShake:
     amplitude: 0.025
     frequency: 25
@@ -10424,8 +10434,6 @@ Transform:
   - {fileID: 8438897406895378864}
   - {fileID: 8438897406326940476}
   - {fileID: 3797856181885744242}
-  - {fileID: 7379824475032057789}
-  - {fileID: 4142566479190856215}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4300195352045198526
@@ -13584,6 +13592,8 @@ Transform:
   - {fileID: 9138287017980458596}
   - {fileID: 2813820101753277114}
   - {fileID: 1664460354195913018}
+  - {fileID: 7379824475032057789}
+  - {fileID: 4142566479190856215}
   m_Father: {fileID: 3797856181885744242}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7570296443801596387
@@ -15780,11 +15790,11 @@ Transform:
   m_GameObject: {fileID: 8587699626039338324}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.16, y: 1.39, z: -1.08}
-  m_LocalScale: {x: 8.929235, y: 8.929235, z: 8.929235}
+  m_LocalPosition: {x: -0.444361, y: 15.365065, z: -3.0570333}
+  m_LocalScale: {x: 79.351234, y: 79.351234, z: 79.351234}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 7429715337549824552}
+  m_Father: {fileID: 3133151723175917236}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &660069030683157501
 MeshFilter:

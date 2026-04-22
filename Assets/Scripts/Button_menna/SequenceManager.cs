@@ -32,51 +32,61 @@ public class SequenceManager : MonoBehaviour
     private const string REVIVE_PATTERN = "ABBCD";
 
     void Awake()
+{
+    if (Instance != null && Instance != this)
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-
-        rtShoot      = FindObjectOfType<RTShoot>();
-        playerHealth = FindObjectOfType<PlayerHealth>();
-
-        // ABBC：武器快速修复——枪管热量归零，立即解除过热
-        RegisterPattern("ABBC", () =>
-        {
-            if (rtShoot == null) rtShoot = FindObjectOfType<RTShoot>();
-            if (rtShoot != null) rtShoot.ResetHeat();
-            else Debug.LogWarning("[SequenceManager] RTShoot not found for ABBC");
-        });
-
-        // DBAC：护盾充能——为次数盾添加 4 次（上限 16）
-        RegisterPattern("DBAC", () =>
-        {
-            if (playerHealth == null) playerHealth = FindObjectOfType<PlayerHealth>();
-            if (playerHealth != null) playerHealth.AddShield(4);
-            else Debug.LogWarning("[SequenceManager] PlayerHealth not found for DBAC");
-        });
-
-        // CABDBAC：机甲修复——恢复最大生命值的 20%
-        RegisterPattern("CABDBAC", () =>
-        {
-            if (playerHealth == null) playerHealth = FindObjectOfType<PlayerHealth>();
-            if (playerHealth != null) playerHealth.HealPercent(0.2f);
-            else Debug.LogWarning("[SequenceManager] PlayerHealth not found for CABDBAC");
-        });
-
-        // ABBCD：复活——以 70% 最大生命值复活（仅死亡状态有效）
-        RegisterPattern("ABBCD", () =>
-        {
-            if (playerHealth == null) playerHealth = FindObjectOfType<PlayerHealth>();
-            if (playerHealth != null) playerHealth.RevivePartial(0.7f);
-            else Debug.LogWarning("[SequenceManager] PlayerHealth not found for ABBCD");
-        });
+        Destroy(gameObject);
+        return;
     }
+    Instance = this;
+    DontDestroyOnLoad(gameObject);
 
+    rtShoot      = FindObjectOfType<RTShoot>();
+    playerHealth = FindObjectOfType<PlayerHealth>();
+
+    // 获取玩家身上的 VisualEffectHandler（假设玩家有该组件）
+    VisualEffectHandler visualEffectHandler = FindObjectOfType<VisualEffectHandler>();
+
+    // ABBC：武器快速修复——枪管热量归零，立即解除过热
+    RegisterPattern("ABBC", () =>
+    {
+        if (rtShoot == null) rtShoot = FindObjectOfType<RTShoot>();
+        if (rtShoot != null) rtShoot.ResetHeat();
+        else Debug.LogWarning("[SequenceManager] RTShoot not found for ABBC");
+    });
+
+    // DBAC：护盾充能——为次数盾添加 4 次（上限16）+ 显示护盾效果
+    RegisterPattern("DBAC", () =>
+    {
+        if (playerHealth == null) playerHealth = FindObjectOfType<PlayerHealth>();
+        if (playerHealth != null) playerHealth.AddShield(4);
+        else Debug.LogWarning("[SequenceManager] PlayerHealth not found for DBAC");
+
+        // 显示护盾视觉效果
+        if (visualEffectHandler == null) visualEffectHandler = FindObjectOfType<VisualEffectHandler>();
+        visualEffectHandler?.ShowShieldEffect();
+    });
+
+    // CABDBAC：机甲修复——恢复最大生命值的20% + 显示回复效果
+    RegisterPattern("CABDBAC", () =>
+    {
+        if (playerHealth == null) playerHealth = FindObjectOfType<PlayerHealth>();
+        if (playerHealth != null) playerHealth.HealPercent(0.2f);
+        else Debug.LogWarning("[SequenceManager] PlayerHealth not found for CABDBAC");
+
+        // 显示回复视觉效果
+        if (visualEffectHandler == null) visualEffectHandler = FindObjectOfType<VisualEffectHandler>();
+        visualEffectHandler?.ShowHealEffect();
+    });
+
+    // ABBCD：复活——以70%最大生命值复活
+    RegisterPattern("ABBCD", () =>
+    {
+        if (playerHealth == null) playerHealth = FindObjectOfType<PlayerHealth>();
+        if (playerHealth != null) playerHealth.RevivePartial(0.7f);
+        else Debug.LogWarning("[SequenceManager] PlayerHealth not found for ABBCD");
+    });
+}
 
     public void RegisterPattern(string sequence, Action effect)
     {

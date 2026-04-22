@@ -136,15 +136,15 @@ MonoBehaviour:
   phase1FireRate: 0.4
   phase1FireDelay: 0.5
   phase1Bullet1Damage: 2
-  immunityDuration: 5
-  crystalPrefab: {fileID: 5407610080759841030, guid: b4fd28a26fdde5f4db3e8590f2f2a16c, type: 3}
+  immunityDuration: 0
+  crystalPrefab: {fileID: 542982490503431599, guid: 17297d048775b6e4c8d64c1e69df099e, type: 3}
   crystalSpawnPoints:
   - {fileID: 5281130059952163285}
   - {fileID: 138377530708503976}
   - {fileID: 3246683321526773054}
   - {fileID: 2199640591958050897}
   crystalSpawnRadius: 8
-  shieldDamageReduction: 0.308
+  shieldDamageReduction: 0.5
   bossGlowLight: {fileID: 0}
   shieldColor: {r: 0, g: 1, b: 1, a: 1}
   shieldFadeSpeed: 3
@@ -154,6 +154,10 @@ MonoBehaviour:
   berserkParticleEffect: {fileID: 4452161037852782641}
   doubleDamageTimeLimit: 300
   forceBerserkTimeLimit: 480
+  phase2Effect: {fileID: 8870486614819814977, guid: 9a6d2b94eddc0b4408264fdb87e84ead, type: 3}
+  phase3Effect: {fileID: 8870486614819814977, guid: 9a6d2b94eddc0b4408264fdb87e84ead, type: 3}
+  deathEffect: {fileID: 5672345531978115077, guid: 03bcb0ff1db002c47941c3ab0cf056d4, type: 3}
+  phaseFxDuration: 3
 --- !u!95 &7568962122421934301
 Animator:
   serializedVersion: 7
@@ -310,7 +314,7 @@ GameObject:
   m_Icon: {fileID: -5442936267250999957, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4755210855806009734
 Transform:
   m_ObjectHideFlags: 0

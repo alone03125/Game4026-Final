@@ -248,7 +248,7 @@ MonoBehaviour:
   minDistanceToPlayer: 18
   boundaryRepulsionDistance: 5
   enemyBulletPrefab: {fileID: 7150022249518444547, guid: c7dbca94e48fca749adf6fb4c7ac80f2, type: 3}
-  shootInterval: 8
+  shootInterval: 4
   bulletSpeed: 8
   warningDuration: 2
   warningEffect: {fileID: 148285926945870227}
@@ -266,6 +266,7 @@ MonoBehaviour:
   chargeSoundVolume: 0.604
   contactDamage: 10
   explosionPrefab: {fileID: 1896930659484292666, guid: f381b7da190f4e54aa46c7d0b4956d00, type: 3}
+  enableAttackVFX: 0
   attackVFXPrefab: {fileID: 1169034615880370166, guid: 47e493c2f041a8a4380a139649269946, type: 3}
   attackVFXSpawnPoint: {fileID: 7336001463954238181}
   attackVFXLifetime: 15
