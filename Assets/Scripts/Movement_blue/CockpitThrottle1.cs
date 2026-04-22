@@ -302,6 +302,7 @@ public class CockpitThrottle : MonoBehaviour
 
         bool isMovingNow = moveDir.sqrMagnitude > 0.0001f;
         Transform audioTarget = mechaRoot != null ? mechaRoot : transform;
+        
         if (isMovingNow)
         {
             CockpitShake.TriggerWalk();

@@ -121,7 +121,9 @@ public class RTShoot : MonoBehaviour
         OnShotFired?.Invoke();
 
         //Play SFX
+        Debug.Log("[RTShoot] FireOnce called");
         AudioManager.Instance?.PlaySfxAtPoint(SfxId.PlayerShoot, bulletOrigin.position, 0.9f);
+        // AudioManager.Instance?.PlaySfx2D(SfxId.PlayerShoot, 1f);
 
         // 射击震动（屏幕）
         CockpitShake.TriggerShoot();
