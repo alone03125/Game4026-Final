@@ -141,6 +141,9 @@ public class Enemy : MonoBehaviour
         StartCoroutine(ShootLoop());
         _initialized = true;
         ActiveEnemies.Add(this);
+        
+        //play sfx
+        
     }
 
     void OnEnable()
@@ -384,14 +387,13 @@ public class Enemy : MonoBehaviour
             }
             // 蓄力音效
             if (chargeSound != null)
-                AudioSource.PlayClipAtPoint(chargeSound, transform.position, chargeSoundVolume);
-
+                AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.EnemyCharge, transform, 0.85f);
             // ── 3. 等待蓄力时间结束 ──
             yield return new WaitForSeconds(chargeDuration);
 
             // ── 4. 发射子弹 + 攻击特效 ──
             if (shootSound != null)
-                AudioSource.PlayClipAtPoint(shootSound, transform.position, chargeSoundVolume);
+                AudioManager.Instance?.PlaySfxAtPoint(SfxId.EnemyShoot, transform.position, 0.9f);
 
             if (player != null)
             {
@@ -553,6 +555,9 @@ public class Enemy : MonoBehaviour
 
     public void Die()
     {
+        //play SFX
+        AudioManager.Instance?.PlaySfxAtPoint(SfxId.EnemyDeath, transform.position, 1f);
+        
         // 生成爆炸特效
         SpawnExplosion();
 

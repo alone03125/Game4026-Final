@@ -8,23 +8,40 @@ public enum SfxId
     PlayerShoot,
     PlayerFall,
     PlayerHeal,
-    PlayerShieldOn,
+    PlayerShieldAdd,
+    PlayerShieldBreak,
+    PlayerShieldBlock,
     PlayerHurt,
     PlayerRespawn,
     PlayerWalkLoop,
+    BeaconSpawn,
+    BeaconReached,
 
     // Boss
     BossSpawn,
     BossShoot,
     BossPhaseChange,
     BossDeath,
-    CrystalHit
+    CrystalSpawn,
+    CrystalHit,
+    CrystalBreak,
+
+    //enemy
+    EnemySpawn,
+    EnemyCharge,
+    EnemyShoot,
+    EnemyDeath
 }
 
 [System.Serializable]
 public class SfxSetting
 {
     public SfxId id;
+
+    [Header("Random Variants (recommended)")]
+    public AudioClip[] clips;
+
+    [Header("Legacy Single Clip (optional fallback)")]
     public AudioClip sfx;
 
     [Range(0f, 3f)] public float volume = 1f;
@@ -33,12 +50,14 @@ public class SfxSetting
 
     [Header("3D Setting")]
     public bool use3D = true;
+    
+    [Tooltip("0: 2D, 1: 3D")]
     [Range(0f, 1f)] public float spatialBlend = 1f;
-    [Tooltip("Logarithmic,近距離大聲，遠距離快速變. Linear, 從 Min Distance 到 Max Distance 直線變小 ")]
+    [Tooltip("Logarithmic: 近距離大聲、遠距離快速衰減；Linear: Min 到 Max 線性衰減")]
     public AudioRolloffMode rolloffMode = AudioRolloffMode.Logarithmic;
-    [Tooltip("在這個距離內，幾乎維持最大音量")]
+    [Tooltip("在這個距離內幾乎維持最大音量, 越小聲音越大")]
     public float minDistance = 1.5f;
-    [Tooltip("超過這個距離後，音量通常非常小")]
+    [Tooltip("超過這個距離後音量通常非常小, 越大聲音越小")]
     public float maxDistance = 30f;
 
     [Header("Optional Mixer Group")]
@@ -50,8 +69,8 @@ public class AudioManager : MonoBehaviour
     public static AudioManager Instance { get; private set; }
 
     [Header("Global Sources")]
-    [SerializeField] private AudioSource bgmSource;     // 2D BGM
-    [SerializeField] private AudioSource uiSfxSource;   // 2D UI
+    [SerializeField] private AudioSource bgmSource;   // 2D BGM
+    [SerializeField] private AudioSource uiSfxSource; // 2D UI / 2D SFX
 
     [Header("Default Volumes")]
     [Range(0f, 1f)] [SerializeField] private float bgmVolume = 0.6f;
@@ -80,13 +99,13 @@ public class AudioManager : MonoBehaviour
         if (bgmSource != null)
         {
             bgmSource.volume = bgmVolume;
-            bgmSource.spatialBlend = 0f; // BGM 2D
+            bgmSource.spatialBlend = 0f;
         }
 
         if (uiSfxSource != null)
         {
             uiSfxSource.volume = uiSfxVolume;
-            uiSfxSource.spatialBlend = 0f; // UI 2D
+            uiSfxSource.spatialBlend = 0f;
         }
 
         BuildSfxMap();
@@ -100,6 +119,7 @@ public class AudioManager : MonoBehaviour
         foreach (var s in sfxSettings)
         {
             if (s == null) continue;
+
             if (!sfxMap.ContainsKey(s.id))
                 sfxMap.Add(s.id, s);
             else
@@ -107,7 +127,7 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-   private bool TryGetSfxSetting(SfxId id, out SfxSetting setting)
+    private bool TryGetSfxSetting(SfxId id, out SfxSetting setting)
     {
         if (sfxMap.Count == 0)
         {
@@ -128,18 +148,53 @@ public class AudioManager : MonoBehaviour
             return false;
         }
 
-        if (setting.sfx == null)
+        if (!HasAnyClip(setting))
         {
-            AudioLog($"AudioClip is null for id: {id}");
+            AudioLog($"No clip assigned for id: {id}");
             return false;
         }
 
-        AudioLog($"SfxSetting OK: {id}, clip={setting.sfx.name}, vol={setting.volume}");
         return true;
     }
 
+    private static bool HasAnyClip(SfxSetting s)
+    {
+        if (s == null) return false;
+        if (s.clips != null)
+        {
+            for (int i = 0; i < s.clips.Length; i++)
+                if (s.clips[i] != null) return true;
+        }
+        return s.sfx != null;
+    }
+
+    private AudioClip PickRandomClip(SfxSetting s)
+    {
+        if (s == null) return null;
+
+        // priority: clips[]
+        if (s.clips != null && s.clips.Length > 0)
+        {
+            // collect non-null clips
+            List<AudioClip> valid = null;
+            for (int i = 0; i < s.clips.Length; i++)
+            {
+                var c = s.clips[i];
+                if (c == null) continue;
+                if (valid == null) valid = new List<AudioClip>();
+                valid.Add(c);
+            }
+
+            if (valid != null && valid.Count > 0)
+                return valid[Random.Range(0, valid.Count)];
+        }
+
+        // fallback
+        return s.sfx;
+    }
+
     // 2D play (UI or no spatial positioning)
-   public void PlaySfx2D(SfxId id, float volumeScale = 1f)
+    public void PlaySfx2D(SfxId id, float volumeScale = 1f)
     {
         AudioLog($"PlaySfx2D called: id={id}, volumeScale={volumeScale}");
 
@@ -151,12 +206,19 @@ public class AudioManager : MonoBehaviour
 
         if (!TryGetSfxSetting(id, out var s)) return;
 
+        AudioClip clip = PickRandomClip(s);
+        if (clip == null)
+        {
+            AudioLog($"PickRandomClip returned NULL: {id}");
+            return;
+        }
+
         float pitch = s.pitch + Random.Range(-s.randomPitch, s.randomPitch);
         uiSfxSource.pitch = Mathf.Clamp(pitch, 0.1f, 3f);
         uiSfxSource.outputAudioMixerGroup = s.outputGroup;
-        uiSfxSource.PlayOneShot(s.sfx, Mathf.Clamp01(s.volume * volumeScale));
+        uiSfxSource.PlayOneShot(clip, Mathf.Clamp01(s.volume * volumeScale));
 
-        AudioLog($"PlaySfx2D playing: {s.sfx.name}");
+        AudioLog($"PlaySfx2D playing: {clip.name}");
     }
 
     // 3D once: play at point (no follow)
@@ -166,16 +228,23 @@ public class AudioManager : MonoBehaviour
 
         if (!TryGetSfxSetting(id, out var s)) return;
 
+        AudioClip clip = PickRandomClip(s);
+        if (clip == null)
+        {
+            AudioLog($"PickRandomClip returned NULL: {id}");
+            return;
+        }
+
         GameObject go = new GameObject($"SFX_{id}");
         go.transform.position = worldPos;
 
         AudioSource src = go.AddComponent<AudioSource>();
         ConfigureSourceFromSetting(src, s, volumeScale, force3D: true, forceLoop: false);
-        src.clip = s.sfx;
+        src.clip = clip;
         src.Play();
 
-        AudioLog($"PlaySfxAtPoint playing: {s.sfx.name}, src={go.name}");
-        Destroy(go, s.sfx.length + 0.2f);
+        AudioLog($"PlaySfxAtPoint playing: {clip.name}, src={go.name}");
+        Destroy(go, clip.length + 0.2f);
     }
 
     // 3D follow: play once on target object
@@ -186,17 +255,24 @@ public class AudioManager : MonoBehaviour
         if (target == null) return;
         if (!TryGetSfxSetting(id, out var s)) return;
 
+        AudioClip clip = PickRandomClip(s);
+        if (clip == null)
+        {
+            AudioLog($"PickRandomClip returned NULL: {id}");
+            return;
+        }
+
         GameObject go = new GameObject($"SFX_{id}_Attached");
         go.transform.SetParent(target, false);
         go.transform.localPosition = Vector3.zero;
 
         AudioSource src = go.AddComponent<AudioSource>();
         ConfigureSourceFromSetting(src, s, volumeScale, force3D: true, forceLoop: false);
-        src.clip = s.sfx;
+        src.clip = clip;
         src.Play();
 
-        AudioLog($"PlaySfxAttachedOnce playing: {s.sfx.name}, parent={target.name}");
-        Destroy(go, s.sfx.length + 0.2f);
+        AudioLog($"PlaySfxAttachedOnce playing: {clip.name}, parent={target.name}");
+        Destroy(go, clip.length + 0.2f);
     }
 
     // 3D continuous loop (e.g. walking/engine) on target object
@@ -207,14 +283,20 @@ public class AudioManager : MonoBehaviour
 
         if (attachedLoopSources.TryGetValue(target, out var existing) && existing != null)
         {
-            if (!existing.isPlaying || existing.clip != s.sfx)
-            {
-                ConfigureSourceFromSetting(existing, s, volumeScale, force3D: true, forceLoop: true);
-                existing.clip = s.sfx;
-                existing.Play();
-            }
+            // loop already running, keep it
+            if (existing.isPlaying) return;
+
+            AudioClip clipExisting = PickRandomClip(s);
+            if (clipExisting == null) return;
+
+            ConfigureSourceFromSetting(existing, s, volumeScale, force3D: true, forceLoop: true);
+            existing.clip = clipExisting;
+            existing.Play();
             return;
         }
+
+        AudioClip clip = PickRandomClip(s);
+        if (clip == null) return;
 
         GameObject go = new GameObject($"Loop_{id}");
         go.transform.SetParent(target, false);
@@ -222,7 +304,7 @@ public class AudioManager : MonoBehaviour
 
         AudioSource src = go.AddComponent<AudioSource>();
         ConfigureSourceFromSetting(src, s, volumeScale, force3D: true, forceLoop: true);
-        src.clip = s.sfx;
+        src.clip = clip;
         src.Play();
 
         attachedLoopSources[target] = src;

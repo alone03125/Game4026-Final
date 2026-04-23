@@ -171,6 +171,9 @@ public class EnemySpawner : MonoBehaviour
                 enemyScript.SetViewAttraction(range.viewAttractionWeight, range.viewAttractionMargin);
             activeEnemies.Add(enemyScript);
         }
+
+        //play SFX
+        AudioManager.Instance?.PlaySfxAtPoint(SfxId.EnemySpawn, randomPos, 0.9f);
     }
 
     public void SpawnEnemyImmediate()

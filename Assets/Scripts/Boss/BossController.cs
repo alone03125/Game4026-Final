@@ -424,6 +424,9 @@ public class BossController : MonoBehaviour
 
         SpawnCrystals();
 
+        //play SFX
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.CrystalSpawn, transform, 1f);
+
         Debug.Log("[Boss] 护盾已激活，4 个水晶已生成！");
     }
 

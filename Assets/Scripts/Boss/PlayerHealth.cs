@@ -77,6 +77,13 @@ public class PlayerHealth : MonoBehaviour
         if (shieldCount > 0)
         {
             shieldCount--;
+
+            //play SFX
+             AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.PlayerShieldBlock, transform, 0.9f);
+
+            if (shieldCount == 0)
+             AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.PlayerShieldBreak, transform, 1f);
+
             Debug.Log($"[Player] 护盾抵挡伤害！剩余护盾次数：{shieldCount}");
             UpdateUI();
             return;
@@ -102,7 +109,7 @@ public class PlayerHealth : MonoBehaviour
     {
         shieldCount = Mathf.Min(shieldCount + count, MAX_SHIELD_COUNT);
         // play SFX
-        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.PlayerShieldOn, transform, 1f);
+        AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.PlayerShieldAdd, transform, 1f);
 
         Debug.Log($"[Player] 护盾充能，当前护盾次数：{shieldCount}");
     }

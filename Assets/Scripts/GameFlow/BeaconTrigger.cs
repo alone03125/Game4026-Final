@@ -70,6 +70,10 @@ public class BeaconTrigger : MonoBehaviour
             if (delta.sqrMagnitude <= triggerRadius * triggerRadius)
             {
                 _triggered = true;
+
+                //play SFX
+                AudioManager.Instance?.PlaySfxAtPoint(SfxId.BeaconReached, transform.position, 1f);
+                
                 Debug.Log($"[BeaconTrigger] 玩家进入信标范围（XZ距离={delta.magnitude:F2}m）");
 
                 // ★ 在玩家面前6格远2格高播放触碰特效

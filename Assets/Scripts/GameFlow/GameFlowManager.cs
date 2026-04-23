@@ -185,6 +185,9 @@ public class GameFlowManager : MonoBehaviour
         if (trigger == null) trigger = activeBeacon.AddComponent<BeaconTrigger>();
         trigger.OnPlayerEntered = OnTutorialBeaconTriggered;
 
+        //play SFX
+        AudioManager.Instance?.PlaySfxAtPoint(SfxId.BeaconSpawn, tutorialBeaconPosition, 1f);
+
         Debug.Log($"[GameFlowManager] Tutorial beacon spawned at {tutorialBeaconPosition}");
     }
 

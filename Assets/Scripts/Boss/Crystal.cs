@@ -93,6 +93,8 @@ public class Crystal : MonoBehaviour
 
         if (currentHealth <= 0f)
             Explode();
+
+            
     }
 
     // ─────────────────────────────────────────────
@@ -127,6 +129,9 @@ public class Crystal : MonoBehaviour
         // 通知 Boss 这颗水晶已被摧毁
         if (registeredBoss != null)
             registeredBoss.OnCrystalDestroyed(this);
+
+        //play SFX
+        AudioManager.Instance?.PlaySfxAtPoint(SfxId.CrystalBreak, transform.position, 1f);
 
         Destroy(gameObject);
     }
