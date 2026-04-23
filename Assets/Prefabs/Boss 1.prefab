@@ -127,9 +127,9 @@ MonoBehaviour:
     destroyOnHit: 1
   - tag: Player
     destroyOnHit: 1
-  maxHealth: 300
-  phase2HealthThreshold: 200
-  phase3HealthThreshold: 100
+  maxHealth: 225
+  phase2HealthThreshold: 150
+  phase3HealthThreshold: 75
   bullet1Prefab: {fileID: 7150022249518444547, guid: dd09038da82f50a42aa15c86a441cceb, type: 3}
   firePoint: {fileID: 0}
   bullet1Speed: 15

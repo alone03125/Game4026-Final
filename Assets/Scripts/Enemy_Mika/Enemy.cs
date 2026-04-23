@@ -30,6 +30,14 @@ public class Enemy : MonoBehaviour
     public float minDistanceToPlayer = 10f;     // 距离玩家小于此值时强制远离
     public float boundaryRepulsionDistance = 5f; // 距边界多近时开始被推离（平滑离开）
 
+    [Header("视野吸引（默认值）")]
+    [Tooltip("敌人朝玩家视野范围内运动的最大权重（0=不吸引，1=只朝视野内移动）。\n此为默认值；EnemySpawner 生成时会用各阶段 StageSpawnRange 中的设置覆盖。")]
+    [Range(0f, 1f)]
+    public float viewAttractionWeight = 0.6f;
+    [Tooltip("视野内缘缓冲带（Viewport 比例）。敌人进入此范围后吸引力线性衰减至 0。\n此为默认值；EnemySpawner 生成时会用各阶段 StageSpawnRange 中的设置覆盖。")]
+    [Range(0f, 0.4f)]
+    public float viewAttractionMargin = 0.12f;
+
     [Header("射击参数")]
     public GameObject enemyBulletPrefab;
     public float shootInterval = 1.5f;
@@ -80,6 +88,7 @@ public class Enemy : MonoBehaviour
     private float shootTimer;
 
     private EnemySpawner spawner;              // 生成器引用
+    private Camera _camera;                    // 缓存的摄像机引用（懒加载）
 
     private bool _warningActive  = false;
     private Vector3 _warningBaseScale;
@@ -251,11 +260,88 @@ public class Enemy : MonoBehaviour
         Vector3 randomDir = Random.onUnitSphere;
         // 放大Y分量使敌人更频繁地上下飞行，verticalMovementScale > 1 越大越活跃
         randomDir.y *= verticalMovementScale;
-        // randomDir.y += 0.6f; // 稍微增加一点向上的倾向，避免完全水平飞行
         randomDir.Normalize();
 
-        Vector3 mixed = (toPlayer * (1 - randomMoveWeight) + randomDir * randomMoveWeight).normalized;
+        // 视野吸引：在视野外时混入推向视野中心的方向
+        float intoViewStrength;
+        Vector3 intoViewDir = GetIntoViewDirection(out intoViewStrength);
+        float effectiveViewWeight = viewAttractionWeight * intoViewStrength;
+
+        Vector3 mixed;
+        if (effectiveViewWeight > 0f)
+        {
+            // 将原有追踪+随机的权重按比例缩小，腾出空间给视野吸引分量
+            float baseScale = 1f - effectiveViewWeight;
+            mixed = (toPlayer    * (1f - randomMoveWeight) * baseScale
+                   + randomDir   * randomMoveWeight        * baseScale
+                   + intoViewDir * effectiveViewWeight).normalized;
+        }
+        else
+        {
+            mixed = (toPlayer * (1f - randomMoveWeight) + randomDir * randomMoveWeight).normalized;
+        }
+
         currentDesiredDir = mixed;
+    }
+
+    // ── 视野吸引辅助方法 ──────────────────────────────────────
+
+    /// <summary>懒加载摄像机：优先使用 EnemySpawner 上指定的摄像机，否则用 Camera.main。</summary>
+    Camera GetCamera()
+    {
+        if (_camera != null) return _camera;
+        _camera = (spawner != null && spawner.mainCamera != null)
+                  ? spawner.mainCamera
+                  : Camera.main;
+        return _camera;
+    }
+
+    /// <summary>
+    /// 计算将敌人推向视野内的方向及强度。
+    /// strength=0 表示敌人已在视野内（含缓冲带），无需吸引；
+    /// strength=1 表示敌人完全超出视野边缘，以最大权重吸引。
+    /// </summary>
+    Vector3 GetIntoViewDirection(out float strength)
+    {
+        strength = 0f;
+        Camera cam = GetCamera();
+        if (cam == null) return Vector3.zero;
+
+        Vector3 vp = cam.WorldToViewportPoint(transform.position);
+
+        // 敌人完全在摄像机背面：不能直接用 forward（会推向玩家），
+        // 改为取摄像机局部空间的横向分量，让敌人从侧面/上方绕行至视野边缘。
+        if (vp.z <= 0f)
+        {
+            strength = 1f;
+            Vector3 localPos = cam.transform.InverseTransformPoint(transform.position);
+            // 只保留 x/y 分量（局部空间的左右/上下偏移），z 清零
+            Vector3 lateral = new Vector3(localPos.x, localPos.y, 0f);
+            // 若敌人恰好在摄像机正后方轴线上（偏移为 0），默认向上绕行
+            if (lateral.sqrMagnitude < 0.01f) lateral = Vector3.up;
+            return cam.transform.TransformDirection(lateral.normalized);
+        }
+
+        float m = viewAttractionMargin;
+
+        // 计算在每个轴上超出内缘的量（>0 = 超出缓冲带，0 = 在缓冲带内，<0 = 深在视野内中不使用）
+        float overX = Mathf.Max(0f, m - vp.x, vp.x - (1f - m));
+        float overY = Mathf.Max(0f, m - vp.y, vp.y - (1f - m));
+        float maxOver = Mathf.Max(overX, overY);
+
+        if (maxOver <= 0f) return Vector3.zero; // 已在视野内，不施加吸引力
+
+        // 将 Viewport 坐标 clamp 到缓冲带内侧，反投影得到目标世界坐标
+        float tx = Mathf.Clamp(vp.x, m + 0.05f, 1f - m - 0.05f);
+        float ty = Mathf.Clamp(vp.y, m + 0.05f, 1f - m - 0.05f);
+        Vector3 targetWorld = cam.ViewportToWorldPoint(new Vector3(tx, ty, vp.z));
+
+        Vector3 dir = targetWorld - transform.position;
+        if (dir.sqrMagnitude < 0.001f) return Vector3.zero;
+
+        // 强度随超出量线性增加，maxOver 超过 margin 时饱和为 1
+        strength = Mathf.Clamp01(maxOver / Mathf.Max(m, 0.001f));
+        return dir.normalized;
     }
 
     void Shoot()
@@ -658,6 +744,16 @@ public class Enemy : MonoBehaviour
     public void SetSpawner(EnemySpawner sp)
     {
         spawner = sp;
+    }
+
+    /// <summary>
+    /// 由 EnemySpawner 在生成时调用，注入当前阶段的视野吸引参数。
+    /// 各阶段的数值在 EnemySpawner → StageSpawnRange 中配置。
+    /// </summary>
+    public void SetViewAttraction(float weight, float margin)
+    {
+        viewAttractionWeight = weight;
+        viewAttractionMargin = margin;
     }
 
     public void ResetState()

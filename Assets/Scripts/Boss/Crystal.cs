@@ -20,6 +20,10 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class Crystal : MonoBehaviour
 {
+    /// <summary>当前场上所有激活的水晶，供 HomingBullet 等系统查询（与 Enemy.ActiveEnemies 模式一致）</summary>
+    public static readonly System.Collections.Generic.List<Crystal> ActiveCrystals =
+        new System.Collections.Generic.List<Crystal>();
+
     [Header("=== 水晶属性 ===")]
     [Tooltip("水晶最大血量")]
     public float maxHealth = 30f;
@@ -52,6 +56,9 @@ public class Crystal : MonoBehaviour
         if (crystalRenderer != null)
             crystalRenderer.material.color = normalColor;
     }
+
+    void OnEnable()  => ActiveCrystals.Add(this);
+    void OnDisable() => ActiveCrystals.Remove(this);
 
     // ─────────────────────────────────────────────
     // 注册所属 Boss（由 BossController 在生成水晶后调用）

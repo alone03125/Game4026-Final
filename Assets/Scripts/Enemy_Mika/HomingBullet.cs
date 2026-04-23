@@ -85,6 +85,7 @@ public class HomingBullet : MonoBehaviour
 
     private Transform FindTarget()
     {
+        // ── 优先锁定 Enemy ───────────────────────────────────
         Transform best = null;
         float bestAngle = searchAngle; // 仅接受 < searchAngle 的
 
@@ -103,6 +104,28 @@ public class HomingBullet : MonoBehaviour
             {
                 bestAngle = angle;
                 best = enemy.transform;
+            }
+        }
+
+        if (best != null) return best;
+
+        // ── 次优先：锁定 Boss_Crystal（Enemy 不存在时才启用）──
+        float crystalBestAngle = searchAngle;
+        foreach (Crystal crystal in Crystal.ActiveCrystals)
+        {
+            if (crystal == null || !crystal.gameObject.activeInHierarchy) continue;
+
+            Vector3 toCrystal = crystal.transform.position - transform.position;
+
+            // 距离过滤
+            if (maxLockDistance > 0f && toCrystal.magnitude > maxLockDistance)
+                continue;
+
+            float angle = Vector3.Angle(transform.forward, toCrystal);
+            if (angle < crystalBestAngle)
+            {
+                crystalBestAngle = angle;
+                best = crystal.transform;
             }
         }
 

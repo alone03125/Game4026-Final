@@ -72,8 +72,9 @@ public class BeaconTrigger : MonoBehaviour
                 _triggered = true;
                 Debug.Log($"[BeaconTrigger] 玩家进入信标范围（XZ距离={delta.magnitude:F2}m）");
 
-                // ★ 播放触碰特效
-                PlayTriggerEffect();
+                // ★ 在玩家面前6格远2格高播放触碰特效
+                Vector3 effectPosition = player.transform.position + player.transform.forward * 6f + Vector3.up * 2f;
+                PlayTriggerEffect(effectPosition);
 
                 OnPlayerEntered?.Invoke();
                 return;
@@ -85,7 +86,7 @@ public class BeaconTrigger : MonoBehaviour
     {
         _beam = gameObject.AddComponent<LineRenderer>();
         _beam.positionCount = 2;
-        _beam.SetPosition(0, transform.position);
+        _beam.SetPosition(0, transform.position + Vector3.up * 1f);  // 从稍微高于地面的点开始，避免穿地面
         _beam.SetPosition(1, transform.position + Vector3.up * beamHeight);
         _beam.startWidth = beamStartWidth;
         _beam.endWidth   = beamEndWidth;
@@ -104,18 +105,44 @@ public class BeaconTrigger : MonoBehaviour
 
     // ★ 新增：触碰特效播放方法
     /// <summary>
-    /// 在信标自身位置实例化触碰特效，并在 triggerEffectDuration 秒后自动销毁。
+    /// 在信标自身位置实例化触碰特效，显式播放层级内所有 ParticleSystem，
+    /// 并根据粒子实际时长（或 triggerEffectDuration）自动销毁。
     /// triggerEffect 为 null 时静默跳过。
     /// </summary>
-    void PlayTriggerEffect()
+    void PlayTriggerEffect(Vector3? positionOverride = null)
     {
         if (triggerEffect == null) return;
 
-        GameObject fx = Instantiate(triggerEffect, transform.position, Quaternion.identity);
+        Vector3 spawnPosition = positionOverride ?? transform.position;
+        GameObject fx = Instantiate(triggerEffect, spawnPosition, Quaternion.identity);
 
-        if (triggerEffectDuration > 0f)
-            Destroy(fx, triggerEffectDuration);
+        // 显式播放所有粒子系统（覆盖 Play On Awake 未勾选的情况）
+        ParticleSystem[] allPs = fx.GetComponentsInChildren<ParticleSystem>(true);
+        float maxDuration = triggerEffectDuration > 0f ? triggerEffectDuration : 2f;
 
-        Debug.Log($"[BeaconTrigger] 触碰特效 [{triggerEffect.name}] 已在 {transform.position} 播放。");
+        foreach (ParticleSystem ps in allPs)
+        {
+            ps.gameObject.SetActive(true);
+            ps.Play(true);
+
+            // 若未指定固定时长，则从粒子自身参数推算最大存活时间
+            if (triggerEffectDuration <= 0f)
+            {
+                var lt = ps.main.startLifetime;
+                float lifetime = lt.mode == ParticleSystemCurveMode.Constant
+                    ? lt.constant
+                    : Mathf.Max(lt.constantMin, lt.constantMax);
+                float total = ps.main.duration + lifetime;
+                if (total > maxDuration) maxDuration = total;
+            }
+        }
+
+        // 无粒子系统时保底 5 秒销毁
+        if (allPs.Length == 0 && triggerEffectDuration <= 0f)
+            maxDuration = 5f;
+
+        Destroy(fx, maxDuration + 0.2f);   // 额外留 0.2s 缓冲
+
+        Debug.Log($"[BeaconTrigger] 触碰特效 [{triggerEffect.name}] 已在 {spawnPosition} 播放，将在 {maxDuration + 0.2f:F1}s 后销毁。");
     }
 }

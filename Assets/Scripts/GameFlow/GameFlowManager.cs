@@ -374,9 +374,8 @@ public class GameFlowManager : MonoBehaviour
         // Boss 阶段持续生成少量敌人干扰玩家
         if (enemySpawner != null && gameManager != null)
         {
-            // 使用最后一个阶段的生成范围
-            int lastStage = Mathf.Max(0, enemySpawner.stages.Length - 1);
-            enemySpawner.SetStage(lastStage);
+            // 切换到 Boss 阶段生成范围（若 useBossStageRange 未启用则自动回退到最后一个普通阶段）
+            enemySpawner.SetBossStage();
             enemySpawner.maxEnemyCount = gameManager.bossStageMaxEnemies;
             enemySpawner.SetSpawnInterval(gameManager.bossStageSpawnInterval);
             enemySpawner.EnableSpawning();

@@ -47,6 +47,17 @@ public class AttackWarningUI : MonoBehaviour
     public float crosshairSize = 0.02f;
     public Color crosshairColor = Color.red;
 
+    [Header("准星圆环")]
+    [Tooltip("圆环半径（画布单位，与 Canvas sizeDelta 同一单位）")]
+    public float crosshairRingRadius = 0.04f;
+    [Tooltip("圆环线条粗细（画布单位）")]
+    public float crosshairRingThickness = 0.005f;
+    [Tooltip("圆环颜色")]
+    public Color crosshairRingColor = new Color(1f, 1f, 1f, 0.8f);
+    [Tooltip("圆环分段数，越大越圆（建议 48）")]
+    [Range(8, 128)]
+    public int crosshairRingSegments = 48;
+
     [Header("脉冲动画")]
     public float pulseSpeed  = 5f;
     [Range(0f, 0.5f)]
@@ -56,6 +67,7 @@ public class AttackWarningUI : MonoBehaviour
     private Camera         _cam;
     private RectTransform  _canvasRect;
     private RectTransform  _crosshairRT;
+    private CrosshairRing  _crosshairRing;
     private readonly List<RectTransform> _arrows      = new List<RectTransform>();
     private readonly List<Image>         _arrowImages = new List<Image>();
 
@@ -183,7 +195,7 @@ public class AttackWarningUI : MonoBehaviour
         }
     }
 
-    /// <summary>在画布中心创建一个圆形红点准星</summary>
+    /// <summary>在画布中心创建一个圆形红点准星及外圈圆环</summary>
     void CreateCrosshair()
     {
         GameObject dot = new GameObject("Crosshair");
@@ -200,6 +212,46 @@ public class AttackWarningUI : MonoBehaviour
         _crosshairRT.sizeDelta = Vector2.one * crosshairSize;
         _crosshairRT.anchoredPosition3D = Vector3.zero;
         _crosshairRT.localScale = Vector3.one;
+
+        // ── 创建准星圆环 ──
+        GameObject ringObj = new GameObject("CrosshairRing");
+        ringObj.transform.SetParent(transform, false);
+
+        _crosshairRing = ringObj.AddComponent<CrosshairRing>();
+        _crosshairRing.color   = crosshairRingColor;
+        _crosshairRing.Radius    = crosshairRingRadius;
+        _crosshairRing.Thickness = crosshairRingThickness;
+        _crosshairRing.Segments  = crosshairRingSegments;
+
+        RectTransform ringRT = ringObj.GetComponent<RectTransform>();
+        ringRT.anchorMin = new Vector2(0.5f, 0.5f);
+        ringRT.anchorMax = new Vector2(0.5f, 0.5f);
+        ringRT.pivot     = new Vector2(0.5f, 0.5f);
+        ringRT.anchoredPosition3D = Vector3.zero;
+        ringRT.localScale = Vector3.one;
+    }
+
+    // ── 圆环公开接口 ──────────────────────────────────────────
+
+    /// <summary>运行时动态修改准星圆环半径（画布单位）</summary>
+    public void SetCrosshairRingRadius(float radius)
+    {
+        crosshairRingRadius = radius;
+        if (_crosshairRing != null) _crosshairRing.Radius = radius;
+    }
+
+    /// <summary>运行时动态修改准星圆环线条粗细（画布单位）</summary>
+    public void SetCrosshairRingThickness(float thickness)
+    {
+        crosshairRingThickness = thickness;
+        if (_crosshairRing != null) _crosshairRing.Thickness = thickness;
+    }
+
+    /// <summary>运行时动态修改准星圆环颜色</summary>
+    public void SetCrosshairRingColor(Color c)
+    {
+        crosshairRingColor = c;
+        if (_crosshairRing != null) _crosshairRing.color = c;
     }
 
     /// <summary>将归一化方向投影到矩形（halfW × halfH）的边缘点</summary>

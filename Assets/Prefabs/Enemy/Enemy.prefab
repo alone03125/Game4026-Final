@@ -236,7 +236,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8382fd3286d91fd479d9e96e43bd74ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 5
+  maxHealth: 10
   baseSpeed: 2
   gravitySensitivity: 1
   randomMoveWeight: 0.5
@@ -247,6 +247,8 @@ MonoBehaviour:
   verticalMovementScale: 0.8
   minDistanceToPlayer: 18
   boundaryRepulsionDistance: 5
+  viewAttractionWeight: 0.6
+  viewAttractionMargin: 0.12
   enemyBulletPrefab: {fileID: 7150022249518444547, guid: c7dbca94e48fca749adf6fb4c7ac80f2, type: 3}
   shootInterval: 4
   bulletSpeed: 8
@@ -264,7 +266,7 @@ MonoBehaviour:
   chargeSound: {fileID: 8300000, guid: b319a2e4ff8f5d840b82d8635b645d22, type: 3}
   shootSound: {fileID: 8300000, guid: 16fba6d30ed741d4a9fdd6e79ee2f3ac, type: 3}
   chargeSoundVolume: 0.604
-  contactDamage: 10
+  contactDamage: 15
   explosionPrefab: {fileID: 1896930659484292666, guid: f381b7da190f4e54aa46c7d0b4956d00, type: 3}
   enableAttackVFX: 0
   attackVFXPrefab: {fileID: 1169034615880370166, guid: 47e493c2f041a8a4380a139649269946, type: 3}

@@ -168,7 +168,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 16
-  damage: 3
+  damage: 4
   lifeTime: 7000000
   enableHitVFX: 1
   hitVFXPrefabs:

@@ -34,12 +34,12 @@ public class PlayerBullet : MonoBehaviour
     {
         if (isDestroyed) return;
 
-        // 击中敌人
+        // 击中敌人：使敌人生命值 -1，归零时敌人自行死亡
         if (other.CompareTag("Enemy"))
         {
             Enemy enemy = other.GetComponent<Enemy>();
             if (enemy != null)
-                enemy.Die();
+                enemy.TakeDamage(1f);
             DestroyBullet();
             return;
         }

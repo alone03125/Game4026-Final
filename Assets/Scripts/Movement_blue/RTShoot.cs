@@ -18,12 +18,14 @@ public class RTShoot : MonoBehaviour
     [SerializeField] private float overheatThreshold = 300f;    // 过热阈值
     [SerializeField] private float normalCoolRate = 100f;       // 正常冷却速率（每秒）
     [SerializeField] private float overheatCoolRate = 60f;      // 过热状态冷却速率（每秒）
+    [SerializeField] private float coolDelay = 0.5f;            // 停止射击后等待多少秒才开始冷却
 
     private InputDevice rightHandDevice;
     private bool isTrigger;
     private float shootTimer;
     private float barrelHeat;     // 当前枪管热量值
     private bool isOverheated;
+    private float _lastShotTime = -999f;  // 上次射击的时间戳
     private PlayerHealth _playerHealth;
 
     [Header("Haptic Feedback")]
@@ -52,8 +54,8 @@ public class RTShoot : MonoBehaviour
     bool triggerPressed = false;
     rightHandDevice.TryGetFeatureValue(CommonUsages.triggerButton, out triggerPressed);
 
-    // 冷却（无论是否过热，只要没在射击就降温）
-    if (!triggerPressed)
+    // 冷却：停止射击后需等待 coolDelay 秒才开始降温
+    if (!triggerPressed && Time.time >= _lastShotTime + coolDelay)
     {
         float coolRate = isOverheated ? overheatCoolRate : normalCoolRate;
         barrelHeat -= coolRate * Time.deltaTime;
@@ -132,7 +134,8 @@ public class RTShoot : MonoBehaviour
         if (rightHandDevice.isValid)
             rightHandDevice.SendHapticImpulse(0, hapticAmplitude, hapticDuration);
 
-        // 每发子弹增加热量
+        // 每发子弹增加热量，并记录本次射击时间（用于冷却延迟计算）
+        _lastShotTime = Time.time;
         barrelHeat += heatPerBullet;
         if (barrelHeat >= overheatThreshold)
         {
