@@ -185,7 +185,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9152276568991299215, guid: 8cdd71ba3ad0d984dbecf421d1c05cab, type: 3}
       propertyPath: sfxSettings.Array.data[2].id
-      value: 2
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 9152276568991299215, guid: 8cdd71ba3ad0d984dbecf421d1c05cab, type: 3}
       propertyPath: sfxSettings.Array.data[3].id
