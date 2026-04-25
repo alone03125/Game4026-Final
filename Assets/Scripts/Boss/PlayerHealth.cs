@@ -37,6 +37,7 @@ public class PlayerHealth : MonoBehaviour
     private RTShoot           _rtShoot;
 
     private bool      isDead = false;
+    private bool      _shieldDisabled = false;  // 难度设置：禁用护盾
     private Quaternion _aliveRotation;
     private Coroutine  _poseRoutine;
 
@@ -107,6 +108,7 @@ public class PlayerHealth : MonoBehaviour
     /// <summary>为护盾添加次数，上限 32。由 DBAC 序列调用。</summary>
     public void AddShield(int count)
     {
+        if (_shieldDisabled) return;  // 难度设置：护盾已禁用
         shieldCount = Mathf.Min(shieldCount + count, MAX_SHIELD_COUNT);
         // play SFX
         AudioManager.Instance?.PlaySfxAttachedOnce(SfxId.PlayerShieldAdd, transform, 1f);
@@ -240,6 +242,22 @@ public class PlayerHealth : MonoBehaviour
     public float GetHealthPercent() => currentHealth / maxHealth;
     public bool  IsDead()           => isDead;
 
-    public int GetShieldCount()    => shieldCount;
-    public int GetMaxShieldCount() => MAX_SHIELD_COUNT;
+    public int GetShieldCount()    => _shieldDisabled ? 0 : shieldCount;
+    public int GetMaxShieldCount() => _shieldDisabled ? 0 : MAX_SHIELD_COUNT;
+
+    /// <summary>禁用护盾（难度 C/D 调用）。将护盾次数和上限均设为 0。</summary>
+    public void DisableShield()
+    {
+        _shieldDisabled = true;
+        shieldCount = 0;
+        UpdateUI();
+        Debug.Log("[Player] 护盾已禁用（难度设置）");
+    }
+
+    /// <summary>将当前血量设为 maxHealth。难度应用后调用。</summary>
+    public void SetCurrentHealthToMax()
+    {
+        currentHealth = maxHealth;
+        UpdateUI();
+    }
 }

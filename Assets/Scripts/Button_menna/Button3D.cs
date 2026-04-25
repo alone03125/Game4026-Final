@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,6 +8,8 @@ using UnityEngine.XR.Interaction.Toolkit;
 [RequireComponent(typeof(XRSimpleInteractable))]
 public class Button3D : MonoBehaviour
 {
+    /// <summary>任意 Button3D 被按下时触发，参数为按钮字符（A/B/C/D）。</summary>
+    public static event Action<char> OnAnyButtonPressed;
     [Header("按钮标识")]
     [Tooltip("对应的字符，建议为大写字母 A/B/C/D")]
     public char buttonId;
@@ -81,6 +84,7 @@ public class Button3D : MonoBehaviour
 
         // 通知核心模块
         SequenceManager.Instance?.OnButtonPressed(buttonId);
+        OnAnyButtonPressed?.Invoke(buttonId);
     }
 
     private IEnumerator PressCooldown()

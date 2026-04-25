@@ -85,32 +85,10 @@ public class HomingBullet : MonoBehaviour
 
     private Transform FindTarget()
     {
-        // ── 优先锁定 Enemy ───────────────────────────────────
+        // ── 优先锁定 Boss_Crystal ────────────────────────────
         Transform best = null;
         float bestAngle = searchAngle; // 仅接受 < searchAngle 的
 
-        foreach (Enemy enemy in Enemy.ActiveEnemies)
-        {
-            if (enemy == null || !enemy.gameObject.activeInHierarchy) continue;
-
-            Vector3 toEnemy = enemy.transform.position - transform.position;
-
-            // 距离过滤
-            if (maxLockDistance > 0f && toEnemy.magnitude > maxLockDistance)
-                continue;
-
-            float angle = Vector3.Angle(transform.forward, toEnemy);
-            if (angle < bestAngle)
-            {
-                bestAngle = angle;
-                best = enemy.transform;
-            }
-        }
-
-        if (best != null) return best;
-
-        // ── 次优先：锁定 Boss_Crystal（Enemy 不存在时才启用）──
-        float crystalBestAngle = searchAngle;
         foreach (Crystal crystal in Crystal.ActiveCrystals)
         {
             if (crystal == null || !crystal.gameObject.activeInHierarchy) continue;
@@ -122,10 +100,32 @@ public class HomingBullet : MonoBehaviour
                 continue;
 
             float angle = Vector3.Angle(transform.forward, toCrystal);
-            if (angle < crystalBestAngle)
+            if (angle < bestAngle)
             {
-                crystalBestAngle = angle;
+                bestAngle = angle;
                 best = crystal.transform;
+            }
+        }
+
+        if (best != null) return best;
+
+        // ── 次优先：锁定 Enemy（Boss_Crystal 不存在时才启用）──
+        float enemyBestAngle = searchAngle;
+        foreach (Enemy enemy in Enemy.ActiveEnemies)
+        {
+            if (enemy == null || !enemy.gameObject.activeInHierarchy) continue;
+
+            Vector3 toEnemy = enemy.transform.position - transform.position;
+
+            // 距离过滤
+            if (maxLockDistance > 0f && toEnemy.magnitude > maxLockDistance)
+                continue;
+
+            float angle = Vector3.Angle(transform.forward, toEnemy);
+            if (angle < enemyBestAngle)
+            {
+                enemyBestAngle = angle;
+                best = enemy.transform;
             }
         }
 

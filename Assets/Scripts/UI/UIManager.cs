@@ -280,6 +280,11 @@ public class UIManager : MonoBehaviour
                 missionText.gameObject.SetActive(true);
                 missionText.text = "Directly touch the button to register command sequence\nThe sequence list is on your right, please activate your gundam";
                 break;
+                
+            case GameFlowManager.FlowState.TutorialDifficulty:
+                missionText.gameObject.SetActive(true);
+                missionText.text = "Select difficulty by touching the corresponding button\n";
+                break;
 
             case GameFlowManager.FlowState.TutorialShoot:
                 missionText.gameObject.SetActive(true);
@@ -464,5 +469,16 @@ public class UIManager : MonoBehaviour
         Color c = tmp.color;
         c.a = alpha;
         tmp.color = c;
+    }
+
+    /// <summary>
+    /// 隐藏护盾 UI（难度 C/D 禁用护盾时调用）。
+    /// 隐藏护盾进度条和护盾文本，后续不再更新。
+    /// </summary>
+    public void HideShieldUI()
+    {
+        if (shieldBar  != null) shieldBar.gameObject.SetActive(false);
+        if (shieldText != null) shieldText.gameObject.SetActive(false);
+        Debug.Log("[UIManager] 护盾 UI 已隐藏（难度设置）");
     }
 }

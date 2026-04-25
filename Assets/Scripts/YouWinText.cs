@@ -48,6 +48,22 @@ public class YouWinText : MonoBehaviour
     [Tooltip("Boss 被击败后延迟多少秒再显示文字")]
     public float delayAfterBoss = 5f;
 
+    [Header("通关时间显示")]
+    [Tooltip("时间文字 fontSize 相对主文字的缩放系数")]
+    public float timeFontSizeScale = 0.55f;
+    [Tooltip("时间文字中心点与 YOU WIN 中心点的纵向间距（世界单位）")]
+    public float timeTextYSpacing = 1.2f;
+    [Tooltip("时间文字的独立旋转速度（度/秒）")]
+    public Vector3 timeRotationSpeed = new Vector3(0f, -65f, 0f);
+    [Tooltip("时间文字 Z 轴振荡最小角度")]
+    public float timeZAngleMin = -120f;
+    [Tooltip("时间文字 Z 轴振荡最大角度")]
+    public float timeZAngleMax =  120f;
+    [Tooltip("时间文字正面颜色")]
+    public Color timeFrontColor = Color.white;
+    [Tooltip("时间文字侧面（挤出层）颜色")]
+    public Color timeSideColor  = new Color(0.3f, 0.3f, 0.3f);
+
     // ── 内部状态 ──────────────────────────────────────────────
     private Camera mainCamera;
     private float  targetY;
@@ -59,10 +75,17 @@ public class YouWinText : MonoBehaviour
     private float _yAngle;
     private float _zTime;
 
+    // 时间显示文字的独立根节点及旋转状态
+    private GameObject _timeRoot;
+    private float      _tmXAngle;
+    private float      _tmYAngle;
+    private float      _tmZTime;
+
     // ─────────────────────────────────────────────────────────
     void Awake()
     {
         BuildExtrudedText();
+        BuildTimeText();
         // 初始隐藏渲染器，等待 Boss 被击败后再显示
         SetRenderersEnabled(false);
     }
@@ -85,6 +108,15 @@ public class YouWinText : MonoBehaviour
     private IEnumerator ShowAfterDelay()
     {
         yield return new WaitForSeconds(delayAfterBoss);
+
+        // 将计时结果写入所有挤出层
+        if (_timeRoot != null)
+        {
+            string timeStr = GameTimer.FormatTime(GameTimer.ElapsedSeconds);
+            foreach (var tm in _timeRoot.GetComponentsInChildren<TextMesh>(true))
+                tm.text = timeStr;
+        }
+
         SetRenderersEnabled(true);
         Activate();
     }
@@ -93,6 +125,10 @@ public class YouWinText : MonoBehaviour
     {
         foreach (var r in GetComponentsInChildren<MeshRenderer>(true))
             r.enabled = on;
+
+        if (_timeRoot != null)
+            foreach (var r in _timeRoot.GetComponentsInChildren<MeshRenderer>(true))
+                r.enabled = on;
     }
 
     private void Activate()
@@ -123,6 +159,10 @@ public class YouWinText : MonoBehaviour
         transform.position = mainCamera.transform.position
                              + forward * offsetFromCamera
                              + Vector3.down * startDepthBelow;
+
+        // 时间文字初始位置：YOU WIN 正下方
+        if (_timeRoot != null)
+            _timeRoot.transform.position = transform.position + Vector3.down * timeTextYSpacing;
 
         ApplyFaceCamera();
     }
@@ -193,11 +233,17 @@ public class YouWinText : MonoBehaviour
         float newY = Mathf.MoveTowards(transform.position.y, targetY, riseSpeed * Time.deltaTime);
         transform.position = new Vector3(transform.position.x, newY, transform.position.z);
 
+        // 时间文字同步跟随上升，保持纵向间距
+        if (_timeRoot != null)
+            _timeRoot.transform.position = transform.position + Vector3.down * timeTextYSpacing;
+
         ApplyFaceCamera();
 
         if (Mathf.Abs(transform.position.y - targetY) < 0.01f)
         {
             transform.position = new Vector3(transform.position.x, targetY, transform.position.z);
+            if (_timeRoot != null)
+                _timeRoot.transform.position = transform.position + Vector3.down * timeTextYSpacing;
             isRising = false;
         }
     }
@@ -205,12 +251,10 @@ public class YouWinText : MonoBehaviour
     // ── 旋转阶段 ─────────────────────────────────────────────
     private void SpinInPlace()
     {
-        // X / Y 轴：持续累积旋转
+        // YOU WIN：X / Y 轴持续累积，Z 轴来回振荡
         _xAngle += rotationSpeed.x * Time.deltaTime;
         _yAngle += rotationSpeed.y * Time.deltaTime;
 
-        // Z 轴：在 zAngleMin ~ zAngleMax 之间来回振荡
-        // rotationSpeed.z 控制振荡速度（度/秒），取绝对值，正负均有效
         _zTime += Time.deltaTime;
         float zRange = Mathf.Abs(zAngleMax - zAngleMin);
         float zAngle = zRange > 0f
@@ -218,6 +262,21 @@ public class YouWinText : MonoBehaviour
             : zAngleMin;
 
         transform.rotation = Quaternion.Euler(_xAngle, _yAngle, zAngle);
+
+        // 时间文字：使用独立角度，轨迹与 YOU WIN 完全无关
+        if (_timeRoot != null)
+        {
+            _tmXAngle += timeRotationSpeed.x * Time.deltaTime;
+            _tmYAngle += timeRotationSpeed.y * Time.deltaTime;
+
+            _tmZTime += Time.deltaTime;
+            float tmZRange = Mathf.Abs(timeZAngleMax - timeZAngleMin);
+            float tmZAngle = tmZRange > 0f
+                ? Mathf.PingPong(_tmZTime * Mathf.Abs(timeRotationSpeed.z), tmZRange) + Mathf.Min(timeZAngleMin, timeZAngleMax)
+                : timeZAngleMin;
+
+            _timeRoot.transform.rotation = Quaternion.Euler(_tmXAngle, _tmYAngle, tmZAngle);
+        }
     }
 
     // ── 朝向摄像机（水平 Billboard）+ 固定偏移角度 ───────────
@@ -233,6 +292,58 @@ public class YouWinText : MonoBehaviour
             // 叠加用户设定的偏移角度（本地空间）
             Quaternion offset  = Quaternion.Euler(rotationOffset);
             transform.rotation = faceCam * offset;
+
+            // 上升阶段时间文字同步朝向摄像机
+            if (_timeRoot != null)
+                _timeRoot.transform.rotation = faceCam * offset;
+        }
+    }
+
+    // ── 构建时间显示文字（独立挤出组，根节点为场景级对象）────
+    private void BuildTimeText()
+    {
+        _timeRoot = new GameObject("YouWinTimeRoot");
+
+        int tFontSize = Mathf.Max(1, Mathf.RoundToInt(fontSize * timeFontSizeScale));
+        float stepZ   = extrudeDepth / Mathf.Max(extrudeLayers - 1, 1);
+
+        for (int i = 0; i < extrudeLayers; i++)
+        {
+            bool isFront = (i == 0);
+
+            GameObject layer;
+            if (isFront)
+            {
+                layer = _timeRoot;
+            }
+            else
+            {
+                layer = new GameObject("TimeExtrudeLayer_" + i);
+                layer.transform.SetParent(_timeRoot.transform, false);
+            }
+
+            TextMesh tm   = layer.AddComponent<TextMesh>();
+            tm.text          = "00:00.000";  // 占位，显示时替换为实际用时
+            tm.fontSize      = tFontSize;
+            tm.characterSize = characterSize;
+            tm.anchor        = TextAnchor.MiddleCenter;
+            tm.alignment     = TextAlignment.Center;
+            tm.fontStyle     = fontStyle;
+
+            if (isFront)
+            {
+                tm.color = timeFrontColor;
+            }
+            else
+            {
+                float t  = (float)i / (extrudeLayers - 1);
+                tm.color = Color.Lerp(timeFrontColor, timeSideColor, t);
+                layer.transform.localPosition = new Vector3(0f, 0f, stepZ * i);
+            }
+
+            MeshRenderer mr = layer.GetComponent<MeshRenderer>();
+            if (mr != null)
+                mr.sortingOrder = extrudeLayers - i;
         }
     }
 }

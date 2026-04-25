@@ -1,14 +1,19 @@
 using UnityEngine;
 using UnityEngine.XR;
+using TMPro;
 
 /// <summary>
 /// 管理整体游戏流程：
-///   等待Trigger → 教程(视角→移动→序列→射击) → 阶段1 → 信标1 → 阶段2 → 信标2 → 阶段3 → 信标3 → Boss阶段 → 游戏结束
+///   等待Trigger → 教程(视角→移动→序列→[难度选择]→射击) → 阶段1 → 信标1 → 阶段2 → 信标2 → 阶段3 → 信标3 → Boss阶段 → 游戏结束
 /// 依赖：SequenceManager、GameManager（配置数据）、EnemySpawner、BossController、RTShoot
 /// </summary>
 public class GameFlowManager : MonoBehaviour
 {
     public static GameFlowManager Instance { get; private set; }
+
+    // 难度等级
+    public enum DifficultyLevel { A, B, C, D }
+    public static DifficultyLevel SelectedDifficulty { get; private set; } = DifficultyLevel.A;
 
     // ─────────────────────────────────────────────
     // 流程状态
@@ -20,6 +25,7 @@ public class GameFlowManager : MonoBehaviour
         TutorialLook,       // 教程：拉动右摇杆调整视角
         TutorialMove,       // 教程：移动到信标位置
         TutorialSequence,   // 教程：输入 ABBCD 序列
+        TutorialDifficulty, // 教程：选择难度（可选）
         TutorialShoot,      // 教程：射击
         Stage1,             // 第一战斗阶段
         Beacon1,            // 信标过渡（1→2）
@@ -38,6 +44,12 @@ public class GameFlowManager : MonoBehaviour
     [Header("=== 引用 ===")]
     public GameManager gameManager;
     public EnemySpawner enemySpawner;
+
+    [Header("=== 难度选择 ===")]
+    [Tooltip("开启后，在输入序列完成后展示难度选择界面，关闭则跳过难度选择直接进入教程射击。")]
+    public bool enableDifficultySelection = false;
+    [Tooltip("用于展示难度选项信息的 TextMeshPro 文本组件（选择完成后自动隐藏）")]
+    public TextMeshProUGUI difficultyDisplayText;
 
     [Header("=== 信标设置 ===")]
     [Tooltip("带有 Trigger 碰撞体的信标 Prefab")]
@@ -111,6 +123,7 @@ public class GameFlowManager : MonoBehaviour
         BossController.OnBossDied -= OnBossKilled;
         RTShoot.OnShotFired -= OnTutorialShotFired;
         CockpitSimpleTurn.OnTurnInputDetected -= OnTutorialTurnDetected;
+        Button3D.OnAnyButtonPressed -= OnDifficultyButtonPressed;
     }
 
     void Update()
@@ -220,7 +233,122 @@ public class GameFlowManager : MonoBehaviour
         if (currentState != FlowState.TutorialSequence) return;
 
         Debug.Log("[GameFlowManager] Tutorial: ABBCD sequence completed!");
+
+        if (enableDifficultySelection)
+            StartDifficultySelection();
+        else
+            StartTutorialShoot();
+    }
+
+    // ─────────────────────────────────────────────
+    // 难度选择（序列完成后、射击前）
+    // ─────────────────────────────────────────────
+
+    void StartDifficultySelection()
+    {
+        currentState = FlowState.TutorialDifficulty;
+
+        if (difficultyDisplayText != null)
+        {
+            difficultyDisplayText.gameObject.SetActive(true);
+        }
+
+        // 延迟到下一帧再订阅，避免触发本次序列最后一个按键（'D'结尾的 ABBCD）
+        // 立即被误识别为难度选择输入。
+        StartCoroutine(SubscribeDifficultyNextFrame());
+        Debug.Log("[GameFlowManager] 请选择难度：A / B / C / D");
+    }
+
+    private System.Collections.IEnumerator SubscribeDifficultyNextFrame()
+    {
+        yield return null;
+        Button3D.OnAnyButtonPressed += OnDifficultyButtonPressed;
+    }
+
+    void OnDifficultyButtonPressed(char button)
+    {
+        if (currentState != FlowState.TutorialDifficulty) return;
+
+        DifficultyLevel level;
+        switch (button)
+        {
+            case 'A': level = DifficultyLevel.A; break;
+            case 'B': level = DifficultyLevel.B; break;
+            case 'C': level = DifficultyLevel.C; break;
+            case 'D': level = DifficultyLevel.D; break;
+            default: return;  // 忽略非难度按键
+        }
+
+        Button3D.OnAnyButtonPressed -= OnDifficultyButtonPressed;
+        SelectedDifficulty = level;
+
+        if (difficultyDisplayText != null)
+            difficultyDisplayText.gameObject.SetActive(false);
+
+        ApplyDifficulty(level);
+        Debug.Log($"[GameFlowManager] 难度已选择：{level}");
         StartTutorialShoot();
+    }
+
+    void ApplyDifficulty(DifficultyLevel level)
+    {
+        if (level == DifficultyLevel.A) return;  // 默认设置，无需修改
+
+        PlayerHealth playerHealth = FindObjectOfType<PlayerHealth>();
+        RTShoot rtShoot = FindObjectOfType<RTShoot>();
+
+        switch (level)
+        {
+            case DifficultyLevel.B:
+                if (playerHealth != null)
+                {
+                    playerHealth.maxHealth *= 0.5f;
+                    playerHealth.SetCurrentHealthToMax();
+                }
+                rtShoot?.SetHeatPerBulletMultiplier(1.5f);
+                break;
+
+            case DifficultyLevel.C:
+                if (playerHealth != null)
+                {
+                    playerHealth.maxHealth *= 0.35f;
+                    playerHealth.SetCurrentHealthToMax();
+                    playerHealth.DisableShield();
+                }
+                rtShoot?.SetHeatPerBulletMultiplier(2f);
+                UIManager.Instance?.HideShieldUI();
+                break;
+
+            case DifficultyLevel.D:
+                if (playerHealth != null)
+                {
+                    playerHealth.maxHealth *= 0.20f;
+                    playerHealth.SetCurrentHealthToMax();
+                    playerHealth.DisableShield();
+                }
+                rtShoot?.SetHeatPerBulletMultiplier(2f);
+                UIManager.Instance?.HideShieldUI();
+
+                if (gameManager != null)
+                {
+                    for (int i = 0; i < gameManager.killsRequiredForNextStage.Length; i++)
+                        gameManager.killsRequiredForNextStage[i] *= 2;
+
+                    for (int i = 0; i < gameManager.spawnIntervalsPerStage.Length; i++)
+                        gameManager.spawnIntervalsPerStage[i] *= 0.5f;
+
+                    gameManager.bossStageMaxEnemies = 20;
+                }
+
+                if (enemySpawner != null)
+                {
+                    enemySpawner.minSpawnInterval *= 0.5f;
+                    enemySpawner.maxSpawnInterval *= 0.5f;
+                }
+                break;
+        }
+        Debug.Log($"[GameFlowManager] 难度 {level} 设置已应用：" +
+                  $"maxHealth={FindObjectOfType<PlayerHealth>()?.maxHealth}");
     }
 
     // ─────────────────────────────────────────────
@@ -238,6 +366,7 @@ public class GameFlowManager : MonoBehaviour
         if (currentState != FlowState.TutorialShoot) return;
 
         RTShoot.OnShotFired -= OnTutorialShotFired;
+        GameTimer.StartTimer();
         Debug.Log("[GameFlowManager] Tutorial: Shot fired, starting Stage 1!");
         StartCombatStage(0);
     }
@@ -413,6 +542,8 @@ public class GameFlowManager : MonoBehaviour
     void OnBossKilled()
     {
         if (currentState != FlowState.BossStage) return;
+
+        GameTimer.StopTimer();
 
         // 停止生成并清除场上所有小怪
         if (enemySpawner != null)

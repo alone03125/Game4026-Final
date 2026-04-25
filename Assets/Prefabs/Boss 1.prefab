@@ -148,12 +148,12 @@ MonoBehaviour:
   bossGlowLight: {fileID: 0}
   shieldColor: {r: 0, g: 1, b: 1, a: 1}
   shieldFadeSpeed: 3
-  phase3FireRate: 1
+  phase3FireRate: 1.2
   phase2FireDelay: 0.3
   phase3Bullet1Damage: 5
   berserkParticleEffect: {fileID: 4452161037852782641}
-  doubleDamageTimeLimit: 300
-  forceBerserkTimeLimit: 480
+  doubleDamageTimeLimit: 400
+  forceBerserkTimeLimit: 600
   phase2Effect: {fileID: 8870486614819814977, guid: 9a6d2b94eddc0b4408264fdb87e84ead, type: 3}
   phase3Effect: {fileID: 8870486614819814977, guid: 9a6d2b94eddc0b4408264fdb87e84ead, type: 3}
   deathEffect: {fileID: 5672345531978115077, guid: 03bcb0ff1db002c47941c3ab0cf056d4, type: 3}

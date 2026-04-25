@@ -162,6 +162,12 @@ public class RTShoot : MonoBehaviour
     public float GetHeatPercent() => overheatThreshold > 0f ? barrelHeat / overheatThreshold : 0f;
     public bool  IsOverheated()   => isOverheated;
 
+    /// <summary>将 heatPerBullet 乘以指定倍数。难度设置时调用。</summary>
+    public void SetHeatPerBulletMultiplier(float multiplier)
+    {
+        heatPerBullet *= multiplier;
+    }
+
     private void TryGetRightHandDevice()
     {
         rightHandDevice = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
